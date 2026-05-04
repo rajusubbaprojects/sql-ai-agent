@@ -1,19 +1,19 @@
 # ── Business Definitions ───────────────────────────────
 definitions:
-  - name: "Active Airline"
-    rule: "Airlines where status = 'active' or is_active = 1"
+  - name: "Delayed Flight"
+    rule: "Flights where delay > 0 (delay is stored in minutes)"
 
-  - name: "Revenue"
-    rule: "Sum of ticket prices where payment_status = 'completed'"
+  - name: "On-time Flight"
+    rule: "Flights where delay = 0 or delay IS NULL"
 
-  - name: "Domestic Flight"
-    rule: "Flights where origin and destination are in the same country"
+  - name: "Short Flight"
+    rule: "Flights where flight_length < 60 minutes"
 
-  - name: "International Flight"
-    rule: "Flights where origin and destination are in different countries"
+  - name: "Long Flight"
+    rule: "Flights where flight_length >= 180 minutes"
 
-  - name: "Peak Season"
-    rule: "Months June, July, August and December"
+  - name: "Airport Code"
+    rule: "3-letter IATA codes stored in airport_from and airport_to"
 
 # ── Query Rules ────────────────────────────────────────
 query_rules:
