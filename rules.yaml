@@ -1,0 +1,37 @@
+# ── Business Definitions ───────────────────────────────
+definitions:
+  - name: "Active Airline"
+    rule: "Airlines where status = 'active' or is_active = 1"
+
+  - name: "Revenue"
+    rule: "Sum of ticket prices where payment_status = 'completed'"
+
+  - name: "Domestic Flight"
+    rule: "Flights where origin and destination are in the same country"
+
+  - name: "International Flight"
+    rule: "Flights where origin and destination are in different countries"
+
+  - name: "Peak Season"
+    rule: "Months June, July, August and December"
+
+# ── Query Rules ────────────────────────────────────────
+query_rules:
+  - "Always use LIMIT 1000 unless user specifies a different limit"
+  - "Never use SELECT * — always specify column names"
+  - "Always add ORDER BY when returning ranked results"
+  - "Use table aliases for readability in JOINs"
+  - "Always filter soft-deleted records where deleted_at IS NULL"
+
+# ── Naming Conventions ─────────────────────────────────
+naming:
+  - "Primary keys are always named 'id'"
+  - "Foreign keys follow pattern: tablename_id (e.g. airline_id)"
+  - "Timestamps are stored in UTC"
+  - "Boolean fields use 0/1 integers"
+
+# ── Performance Rules ──────────────────────────────────
+performance:
+  - "Always use indexed columns in WHERE clauses"
+  - "Avoid functions on indexed columns in WHERE (breaks index)"
+  - "Use EXPLAIN for queries on tables with 100k+ rows"

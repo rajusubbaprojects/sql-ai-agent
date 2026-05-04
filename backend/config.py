@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_port: int = 8000
     debug: bool = True
+    rules_file: str = "rules.yaml"
     
     #------ AWS (used later in Phase 5)
     aws_region: str = "us-east-1"
