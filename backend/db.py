@@ -19,46 +19,38 @@ def get_connection():
         print(f"The error '{e}' occurred")
         raise
     
-def execute_query(query: str) -> dict:
-    """Execute a SQL query and return a results. Returns a dict with columns and rows."""
-    connection = None
-    cursor = None
+def execute_query(sql: str, params: tuple = None) -> dict:
+    """Execute a SQL query and return results."""
     try:
-        connection = get_connection()
-        cursor = connection.cursor(dictionary=True, buffered=True)
-        cursor.execute(query)
-        
-        rows = cursor.fetchall()
-        
-        if rows is not None:
-            columns = list(rows[0].keys()) if rows else []
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        cursor.execute(sql, params)
+
+        # DML statements (INSERT, UPDATE, DELETE) — commit and return affected rows
+        sql_stripped = sql.strip().upper()
+        if sql_stripped.startswith(("INSERT", "UPDATE", "DELETE")):
+            conn.commit()
             return {
-                "success": True,
-                "columns": columns,
-                "rows": rows,
-                "row_count": len(rows)
+                "success":       True,
+                "rows_affected": cursor.rowcount,
+                "last_insert_id": cursor.lastrowid,
             }
-            
-        #For INSERT?UPDATE - commit and return affected rows
-        
-        connection.commit()
+
+        # SELECT / DESCRIBE / SHOW — fetch results
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description] if cursor.description else []
         return {
-            "success": True,
-            "row_affected": cursor.rowcount
-            
+            "success":   True,
+            "columns":   columns,
+            "rows":      rows,
+            "row_count": len(rows),
         }
-    except Error as e:
+
+    except Exception as e:
         return {
             "success": False,
-            "error": str(e),
-            "rows": [],
-            "row_count": 0
+            "error":   str(e),
         }
-    finally:
-        if cursor:
-            cursor.close()
-        if connection and connection.is_connected():
-            connection.close()
             
 def test_connection() -> bool:
     #Quick check - is the database reachable
