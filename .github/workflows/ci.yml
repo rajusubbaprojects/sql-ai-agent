@@ -46,6 +46,27 @@ jobs:
 
       - name: Run pre-commit hooks
         uses: pre-commit/action@v3.0.1
+      - name: Debug Claude API connection
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python3 -c "
+          import anthropic
+          import os
+          key = os.getenv('ANTHROPIC_API_KEY', '')
+          print(f'Key length: {len(key)}')
+          print(f'Key prefix: {key[:10]}...')
+          try:
+              client = anthropic.Anthropic(api_key=key)
+              response = client.messages.create(
+                  model='claude-sonnet-4-5',
+                  max_tokens=50,
+                  messages=[{'role': 'user', 'content': 'Say OK'}]
+              )
+              print('Claude API: OK -', response.content[0].text)
+          except Exception as e:
+              print(f'Claude API ERROR: {type(e).__name__}: {e}')
+          "
 
       - name: Run Phase 2 tests
         env:
