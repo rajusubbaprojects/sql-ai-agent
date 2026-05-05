@@ -2,6 +2,8 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from pathlib import Path
+from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 class Settings(BaseSettings):
     #--Claude AI------------------------------
     anthropic_api_key: str
@@ -24,9 +26,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     aws_s3_bucket_name: str = ""
-    class Config:
-        env_file = Path(__file__).parent.parent / ".env"
-        env_file_encoding = "utf-8"
+    model_config = {"env_file": ".env"}
         
 @lru_cache()
 def get_settings() -> Settings:
