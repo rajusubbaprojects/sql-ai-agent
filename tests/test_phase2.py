@@ -1,5 +1,8 @@
 # tests/test_phase2.py
 # End-to-end tests for Phase 2 — Business Rules Engine
+import os
+
+import pytest
 
 from backend.agent import ask_agent, get_history, reset_conversation
 from backend.prompt_builder import (
@@ -261,6 +264,10 @@ class TestPromptBuilder:
 # ══════════════════════════════════════════════════════
 
 
+@pytest.mark.skipif(
+    os.getenv("APP_ENV") == "test",
+    reason="EndToEnd tests require live Claude API — run locally only",
+)
 class TestEndToEnd:
 
     def setup_method(self):
@@ -269,6 +276,8 @@ class TestEndToEnd:
 
     def test_ask_agent_basic_question(self):
         result = ask_agent("How many flights are in the database?")
+        if not result["success"]:
+            print(f"\nClaude API error: {result.get('error')}")
         assert result["success"] is True
         assert result["answer"] is not None
         assert len(result["answer"]) > 10
