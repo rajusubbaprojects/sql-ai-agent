@@ -95,7 +95,7 @@
 #     try:
 #         # Call Claude API
 #         response = client.messages.create(
-#             model="claude-opus-4-5",
+#             model="claude-sonnet-4-5",
 #             max_tokens=2048,
 #             system=build_system_prompt(),
 #             messages=conversation_history
@@ -174,7 +174,7 @@ def ask_agent(question: str, reset: bool = False) -> dict:
 
     try:
         response = client.messages.create(
-            model="claude-opus-4-5",
+            model="claude-sonnet-4-5",
             max_tokens=1024,
             system=build_system_prompt(),  # ← schema + rules
             messages=build_messages(question, _history),

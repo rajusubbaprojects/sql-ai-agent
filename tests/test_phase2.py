@@ -1,10 +1,6 @@
 # tests/test_phase2.py
 # End-to-end tests for Phase 2 — Business Rules Engine
 
-
-# tests/test_phase2.py
-# End-to-end tests for Phase 2 — Business Rules Engine
-
 from backend.agent import ask_agent, get_history, reset_conversation
 from backend.prompt_builder import (
     build_messages,
