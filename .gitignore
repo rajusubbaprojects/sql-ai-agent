@@ -3,3 +3,54 @@ __pycache__/
 .env
 .DS_Store
 .DS_Store
+# ── Secrets & Environment ──────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+credentials/
+
+# ── Python ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Pytest ─────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+
+# ── macOS ──────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── VSCode ─────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ── AWS ────────────────────────────────────────────
+.aws/
+aws-exports.js
+
+# ── Logs ───────────────────────────────────────────
+*.log
+logs/
+
+# ── Database ───────────────────────────────────────
+*.sql
+*.sqlite
+*.db
