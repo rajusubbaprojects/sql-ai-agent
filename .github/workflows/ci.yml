@@ -1,0 +1,61 @@
+# .github/workflows/ci.yml
+# Runs on every push and PR — tests must pass before merging
+
+name: CI
+
+on:
+  push:
+    branches: [main, dev, "feature/**"]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pre-commit hooks
+        uses: pre-commit/action@v3.0.1
+
+      - name: Run Phase 2 tests
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_NAME: airlines_db
+          DB_USER: root
+          DB_PASSWORD: ""
+          APP_ENV: test
+          DEBUG: "true"
+          RULES_FILE: rules.yaml
+        run: |
+          pytest tests/test_phase2.py -v --tb=short
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ""
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: airlines_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
