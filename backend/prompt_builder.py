@@ -1,11 +1,11 @@
 # backend/prompt_builder.py
 # Assembles the full prompt sent to Claude for every question
 
-from backend.schema_extractor import get_schema_for_claude
 from backend.rules_loader import get_rules_for_claude
-
+from backend.schema_extractor import get_schema_for_claude
 
 # ── System Prompt ──────────────────────────────────────
+
 
 def build_system_prompt() -> str:
     """
@@ -14,7 +14,7 @@ def build_system_prompt() -> str:
     Cached at call time — schema and rules are read once.
     """
     schema = get_schema_for_claude()
-    rules  = get_rules_for_claude()
+    rules = get_rules_for_claude()
 
     return f"""You are an expert SQL assistant for a MySQL database.
 Your job is to help users query the database using natural language.
@@ -37,6 +37,7 @@ IMPORTANT INSTRUCTIONS:
 
 # ── User Message ───────────────────────────────────────
 
+
 def build_user_message(question: str) -> str:
     """
     Wrap the user's raw question in a consistent format
@@ -55,10 +56,8 @@ Respond with:
 
 # ── Conversation History ───────────────────────────────
 
-def build_messages(
-    question: str,
-    history: list = None
-) -> list:
+
+def build_messages(question: str, history: list = None) -> list:
     """
     Build the full messages array for Claude API call.
 
@@ -74,21 +73,26 @@ def build_messages(
     # Add conversation history (prior turns)
     if history:
         for turn in history:
-            messages.append({
-                "role":    turn["role"],
-                "content": turn["content"],
-            })
+            messages.append(
+                {
+                    "role": turn["role"],
+                    "content": turn["content"],
+                }
+            )
 
     # Add the current question
-    messages.append({
-        "role":    "user",
-        "content": build_user_message(question),
-    })
+    messages.append(
+        {
+            "role": "user",
+            "content": build_user_message(question),
+        }
+    )
 
     return messages
 
 
 # ── Prompt Preview ─────────────────────────────────────
+
 
 def preview_prompt(question: str, history: list = None) -> dict:
     """
@@ -97,8 +101,8 @@ def preview_prompt(question: str, history: list = None) -> dict:
     """
     return {
         "system_prompt": build_system_prompt(),
-        "messages":      build_messages(question, history),
-        "system_chars":  len(build_system_prompt()),
-        "question":      question,
+        "messages": build_messages(question, history),
+        "system_chars": len(build_system_prompt()),
+        "question": question,
         "history_turns": len(history) if history else 0,
     }

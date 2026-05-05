@@ -1,8 +1,12 @@
 # MySQL connection — connect, execute queries, return results
 import mysql.connector
 from mysql.connector import Error
+
 from backend.config import get_settings
+
 settings = get_settings()
+
+
 def get_connection():
     """Create and return a database connection object."""
     try:
@@ -12,13 +16,13 @@ def get_connection():
             database=settings.db_name,
             user=settings.db_user,
             password=settings.db_password,
-            
         )
         return connection
     except Error as e:
         print(f"The error '{e}' occurred")
         raise
-    
+
+
 def execute_query(sql: str, params: tuple = None) -> dict:
     """Execute a SQL query and return results."""
     try:
@@ -31,7 +35,7 @@ def execute_query(sql: str, params: tuple = None) -> dict:
         if sql_stripped.startswith(("INSERT", "UPDATE", "DELETE")):
             conn.commit()
             return {
-                "success":       True,
+                "success": True,
                 "rows_affected": cursor.rowcount,
                 "last_insert_id": cursor.lastrowid,
             }
@@ -40,20 +44,21 @@ def execute_query(sql: str, params: tuple = None) -> dict:
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description] if cursor.description else []
         return {
-            "success":   True,
-            "columns":   columns,
-            "rows":      rows,
+            "success": True,
+            "columns": columns,
+            "rows": rows,
             "row_count": len(rows),
         }
 
     except Exception as e:
         return {
             "success": False,
-            "error":   str(e),
+            "error": str(e),
         }
-            
+
+
 def test_connection() -> bool:
-    #Quick check - is the database reachable
+    # Quick check - is the database reachable
     try:
         conn = get_connection()
         if conn.is_connected():
@@ -65,4 +70,3 @@ def test_connection() -> bool:
     except Error as e:
         print(f"The error '{e}' occurred")
         return False
-           

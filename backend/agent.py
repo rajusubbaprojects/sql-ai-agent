@@ -28,7 +28,7 @@
 #     schema = get_schema_for_claude()
 #     rules  = get_rules_for_claude()
 
-#     system_prompt = f"""You are an expert SQL AI Agent with deep knowledge 
+#     system_prompt = f"""You are an expert SQL AI Agent with deep knowledge
 # of the user's specific MySQL database, business rules, and context.
 
 # ## YOUR ROLE
@@ -142,17 +142,19 @@
 # Claude AI integration — uses prompt_builder for all calls
 
 import anthropic
+
 from backend.config import get_settings
-from backend.prompt_builder import build_system_prompt, build_messages
+from backend.prompt_builder import build_messages, build_system_prompt
 
 settings = get_settings()
-client   = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 # In-memory conversation history (resets on server restart)
 _history: list = []
 
 
 # ── Ask Claude ─────────────────────────────────────────
+
 
 def ask_agent(question: str, reset: bool = False) -> dict:
     """
@@ -172,36 +174,37 @@ def ask_agent(question: str, reset: bool = False) -> dict:
 
     try:
         response = client.messages.create(
-            model      = "claude-opus-4-5",
-            max_tokens = 1024,
-            system     = build_system_prompt(),       # ← schema + rules
-            messages   = build_messages(question, _history),
+            model="claude-opus-4-5",
+            max_tokens=1024,
+            system=build_system_prompt(),  # ← schema + rules
+            messages=build_messages(question, _history),
         )
 
         answer = response.content[0].text
 
         # Save this turn to history
-        _history.append({"role": "user",      "content": question})
+        _history.append({"role": "user", "content": question})
         _history.append({"role": "assistant", "content": answer})
 
         # Try to extract SQL from the response
         sql = _extract_sql(answer)
 
         return {
-            "success":  True,
-            "answer":   answer,
-            "sql":      sql,
-            "history":  _history,
+            "success": True,
+            "answer": answer,
+            "sql": sql,
+            "history": _history,
         }
 
     except Exception as e:
         return {
             "success": False,
-            "error":   str(e),
+            "error": str(e),
         }
 
 
 # ── SQL Extractor ──────────────────────────────────────
+
 
 def _extract_sql(text: str) -> str | None:
     """
@@ -224,6 +227,7 @@ def _extract_sql(text: str) -> str | None:
 
 
 # ── History Helpers ────────────────────────────────────
+
 
 def reset_conversation() -> None:
     """Clear conversation history."""

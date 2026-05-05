@@ -1,0 +1,67 @@
+# .pre-commit-config.yaml
+# Runs automatically before every git commit
+# To run manually: pre-commit run --all-files
+
+repos:
+
+  # ── General file hygiene ───────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+
+      - id: end-of-file-fixer
+        name: Fix missing newline at end of file
+
+      - id: check-yaml
+        name: Validate YAML files
+
+      - id: check-json
+        name: Validate JSON files
+
+      - id: check-merge-conflict
+        name: Check for merge conflict markers
+
+      - id: check-added-large-files
+        name: Block large file commits
+        args: ["--maxkb=500"]
+
+      - id: debug-statements
+        name: Check for debug statements (pdb, breakpoint)
+
+  # ── Secret detection ───────────────────────────────
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        name: Detect hardcoded secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: .env.example
+
+  # ── Python formatting ──────────────────────────────
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        name: Format Python code (black)
+        language_version: python3.11
+
+  # ── Python linting ─────────────────────────────────
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        name: Lint Python code (flake8)
+        args:
+          - "--max-line-length=100"
+          - "--extend-ignore=E203,W503,E501"
+        exclude: "venv/|migrations/"
+
+  # ── Import sorting ─────────────────────────────────
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: Sort Python imports (isort)
+        args: ["--profile=black", "--line-length=100"]

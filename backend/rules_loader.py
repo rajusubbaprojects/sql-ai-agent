@@ -1,21 +1,18 @@
 # backend/rules_loader.py
 # Reads business_rules.yaml and formats it for Claude's prompt
 
-import yaml
 import os
 from functools import lru_cache
 
+import yaml
 
 # ── Path to rules file ─────────────────────────────────
 
-RULES_FILE = os.path.join(
-    os.path.dirname(__file__),
-    "configs",
-    "business_rules.yaml"
-)
+RULES_FILE = os.path.join(os.path.dirname(__file__), "configs", "business_rules.yaml")
 
 
 # ── Load & Validate ────────────────────────────────────
+
 
 @lru_cache(maxsize=1)
 def load_rules() -> dict:
@@ -50,6 +47,7 @@ def _validate_rules(rules: dict) -> None:
 
 # ── Section Formatters ─────────────────────────────────
 
+
 def format_vocabulary(rules: dict) -> str:
     """Format domain vocabulary for Claude."""
     lines = ["DOMAIN VOCABULARY:", "-" * 40]
@@ -77,8 +75,7 @@ def format_query_rules(rules: dict) -> str:
     # Sort by priority: high → medium → low
     priority_order = {"high": 0, "medium": 1, "low": 2}
     sorted_rules = sorted(
-        query_rules,
-        key=lambda r: priority_order.get(r.get("priority", "low"), 2)
+        query_rules, key=lambda r: priority_order.get(r.get("priority", "low"), 2)
     )
 
     lines = ["QUERY RULES (follow strictly):", "-" * 40]
@@ -105,6 +102,7 @@ def format_output_rules(rules: dict) -> str:
 
 
 # ── Main Formatter ─────────────────────────────────────
+
 
 def get_rules_for_claude() -> str:
     """
@@ -134,6 +132,7 @@ def get_rules_for_claude() -> str:
 
 # ── Reload Helper ──────────────────────────────────────
 
+
 def reload_rules() -> dict:
     """
     Force reload rules from disk (clears cache).
@@ -145,13 +144,14 @@ def reload_rules() -> dict:
 
 # ── Rule Introspection ─────────────────────────────────
 
+
 def get_rules_summary() -> dict:
     """Return a summary of loaded rules (for /rules API endpoint)."""
     rules = load_rules()
     return {
-        "version":         rules.get("version"),
-        "database":        rules.get("database"),
-        "description":     rules.get("description"),
+        "version": rules.get("version"),
+        "database": rules.get("database"),
+        "description": rules.get("description"),
         "vocabulary_count": len(rules.get("vocabulary", [])),
         "column_rules_count": len(rules.get("column_rules", [])),
         "query_rules_count": len(rules.get("query_rules", [])),

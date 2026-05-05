@@ -1,8 +1,10 @@
 # Business rules engine — loads and injects rules into prompts
 # Business rules engine — loads and injects rules into prompts
 
-import yaml
 from pathlib import Path
+
+import yaml
+
 from backend.config import get_settings
 
 settings = get_settings()

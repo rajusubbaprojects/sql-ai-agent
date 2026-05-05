@@ -1,39 +1,40 @@
 # tests/test_phase2.py
 # End-to-end tests for Phase 2 — Business Rules Engine
 
-import pytest
-import re
+
+# tests/test_phase2.py
+# End-to-end tests for Phase 2 — Business Rules Engine
+
+from backend.agent import ask_agent, get_history, reset_conversation
+from backend.prompt_builder import (
+    build_messages,
+    build_system_prompt,
+    build_user_message,
+    preview_prompt,
+)
+from backend.rules_loader import (
+    format_query_rules,
+    format_safety_rules,
+    format_vocabulary,
+    get_rules_for_claude,
+    get_rules_summary,
+    load_rules,
+    reload_rules,
+)
 from backend.schema_extractor import (
-    get_tables,
     get_columns,
+    get_full_schema,
     get_primary_keys,
     get_row_count,
     get_sample_values,
-    get_full_schema,
     get_schema_for_claude,
+    get_tables,
 )
-from backend.rules_loader import (
-    load_rules,
-    get_rules_for_claude,
-    get_rules_summary,
-    reload_rules,
-    format_vocabulary,
-    format_column_rules,
-    format_query_rules,
-    format_safety_rules,
-)
-from backend.prompt_builder import (
-    build_system_prompt,
-    build_user_message,
-    build_messages,
-    preview_prompt,
-)
-from backend.agent import ask_agent, reset_conversation, get_history
-
 
 # ══════════════════════════════════════════════════════
 # SCHEMA EXTRACTOR TESTS
 # ══════════════════════════════════════════════════════
+
 
 class TestSchemaExtractor:
 
@@ -50,9 +51,16 @@ class TestSchemaExtractor:
         cols = get_columns("airlines")
         col_names = [c["Field"] for c in cols]
         expected = [
-            "id", "airline", "flight_number", "airport_from",
-            "airport_to", "day_of_week", "flight_time_integer",
-            "flight_length", "delay", "flight_time"
+            "id",
+            "airline",
+            "flight_number",
+            "airport_from",
+            "airport_to",
+            "day_of_week",
+            "flight_time_integer",
+            "flight_length",
+            "delay",
+            "flight_time",
         ]
         for col in expected:
             assert col in col_names, f"Missing column: {col}"
@@ -81,11 +89,11 @@ class TestSchemaExtractor:
         assert "tables" in schema
         assert len(schema["tables"]) > 0
         table = schema["tables"][0]
-        assert "table"        in table
-        assert "columns"      in table
+        assert "table" in table
+        assert "columns" in table
         assert "primary_keys" in table
         assert "foreign_keys" in table
-        assert "row_count"    in table
+        assert "row_count" in table
 
     def test_get_schema_for_claude_is_string(self):
         schema_str = get_schema_for_claude()
@@ -94,10 +102,10 @@ class TestSchemaExtractor:
 
     def test_schema_for_claude_contains_key_sections(self):
         schema_str = get_schema_for_claude()
-        assert "DATABASE SCHEMA"  in schema_str
-        assert "airlines"         in schema_str
-        assert "PRIMARY KEY"      in schema_str
-        assert "airline"          in schema_str
+        assert "DATABASE SCHEMA" in schema_str
+        assert "airlines" in schema_str
+        assert "PRIMARY KEY" in schema_str
+        assert "airline" in schema_str
 
     def test_schema_for_claude_contains_samples(self):
         schema_str = get_schema_for_claude()
@@ -108,6 +116,7 @@ class TestSchemaExtractor:
 # RULES LOADER TESTS
 # ══════════════════════════════════════════════════════
 
+
 class TestRulesLoader:
 
     def test_load_rules_returns_dict(self):
@@ -116,8 +125,14 @@ class TestRulesLoader:
 
     def test_load_rules_required_sections(self):
         rules = load_rules()
-        for section in ["version", "database", "vocabulary",
-                        "column_rules", "query_rules", "safety_rules"]:
+        for section in [
+            "version",
+            "database",
+            "vocabulary",
+            "column_rules",
+            "query_rules",
+            "safety_rules",
+        ]:
             assert section in rules, f"Missing section: {section}"
 
     def test_vocabulary_has_delayed_flight(self):
@@ -136,10 +151,10 @@ class TestRulesLoader:
 
     def test_get_rules_summary_counts(self):
         summary = get_rules_summary()
-        assert summary["vocabulary_count"]    > 0
-        assert summary["column_rules_count"]  > 0
-        assert summary["query_rules_count"]   > 0
-        assert summary["safety_rules_count"]  > 0
+        assert summary["vocabulary_count"] > 0
+        assert summary["column_rules_count"] > 0
+        assert summary["query_rules_count"] > 0
+        assert summary["safety_rules_count"] > 0
 
     def test_get_rules_for_claude_is_string(self):
         rules_str = get_rules_for_claude()
@@ -148,16 +163,16 @@ class TestRulesLoader:
 
     def test_rules_for_claude_contains_sections(self):
         rules_str = get_rules_for_claude()
-        assert "DOMAIN VOCABULARY"   in rules_str
+        assert "DOMAIN VOCABULARY" in rules_str
         assert "COLUMN EXPLANATIONS" in rules_str
-        assert "QUERY RULES"         in rules_str
-        assert "SAFETY RULES"        in rules_str
+        assert "QUERY RULES" in rules_str
+        assert "SAFETY RULES" in rules_str
 
     def test_high_priority_rules_appear_first(self):
         rules = load_rules()
         formatted = format_query_rules(rules)
         high_pos = formatted.find("[HIGH]")
-        low_pos  = formatted.find("[LOW]")
+        low_pos = formatted.find("[LOW]")
         if high_pos != -1 and low_pos != -1:
             assert high_pos < low_pos
 
@@ -170,18 +185,19 @@ class TestRulesLoader:
         rules = load_rules()
         result = format_vocabulary(rules)
         assert "DOMAIN VOCABULARY" in result
-        assert "delayed flight"    in result
+        assert "delayed flight" in result
 
     def test_format_safety_rules(self):
         rules = load_rules()
         result = format_safety_rules(rules)
-        assert "SAFETY RULES"  in result
-        assert "DROP"          in result
+        assert "SAFETY RULES" in result
+        assert "DROP" in result
 
 
 # ══════════════════════════════════════════════════════
 # PROMPT BUILDER TESTS
 # ══════════════════════════════════════════════════════
+
 
 class TestPromptBuilder:
 
@@ -193,35 +209,35 @@ class TestPromptBuilder:
     def test_system_prompt_contains_schema(self):
         prompt = build_system_prompt()
         assert "DATABASE SCHEMA" in prompt
-        assert "airlines"        in prompt
+        assert "airlines" in prompt
 
     def test_system_prompt_contains_rules(self):
         prompt = build_system_prompt()
-        assert "BUSINESS RULES"  in prompt
-        assert "SAFETY RULES"    in prompt
+        assert "BUSINESS RULES" in prompt
+        assert "SAFETY RULES" in prompt
         assert "DOMAIN VOCABULARY" in prompt
 
     def test_system_prompt_contains_instructions(self):
         prompt = build_system_prompt()
         assert "IMPORTANT INSTRUCTIONS" in prompt
-        assert "SELECT"                 in prompt
+        assert "SELECT" in prompt
 
     def test_build_user_message_contains_question(self):
-        q   = "How many flights are delayed?"
+        q = "How many flights are delayed?"
         msg = build_user_message(q)
-        assert q    in msg
+        assert q in msg
         assert "SQL" in msg
         assert "EXPLANATION" in msg
 
     def test_build_messages_no_history(self):
         msgs = build_messages("test question")
         assert len(msgs) == 1
-        assert msgs[0]["role"]    == "user"
-        assert "test question"    in msgs[0]["content"]
+        assert msgs[0]["role"] == "user"
+        assert "test question" in msgs[0]["content"]
 
     def test_build_messages_with_history(self):
         history = [
-            {"role": "user",      "content": "first question"},
+            {"role": "user", "content": "first question"},
             {"role": "assistant", "content": "first answer"},
         ]
         msgs = build_messages("second question", history)
@@ -233,10 +249,10 @@ class TestPromptBuilder:
 
     def test_preview_prompt_structure(self):
         preview = preview_prompt("test question")
-        assert "system_prompt"  in preview
-        assert "messages"       in preview
-        assert "system_chars"   in preview
-        assert "history_turns"  in preview
+        assert "system_prompt" in preview
+        assert "messages" in preview
+        assert "system_chars" in preview
+        assert "history_turns" in preview
         assert preview["history_turns"] == 0
 
     def test_preview_prompt_char_count(self):
@@ -248,6 +264,7 @@ class TestPromptBuilder:
 # END-TO-END CLAUDE TESTS
 # ══════════════════════════════════════════════════════
 
+
 class TestEndToEnd:
 
     def setup_method(self):
@@ -257,13 +274,13 @@ class TestEndToEnd:
     def test_ask_agent_basic_question(self):
         result = ask_agent("How many flights are in the database?")
         assert result["success"] is True
-        assert result["answer"]  is not None
+        assert result["answer"] is not None
         assert len(result["answer"]) > 10
 
     def test_ask_agent_returns_sql(self):
         result = ask_agent("Show me all airlines")
         assert result["success"] is True
-        assert result["sql"]     is not None
+        assert result["sql"] is not None
         sql = result["sql"].upper()
         assert "SELECT" in sql
         assert "airlines" in result["sql"].lower()
@@ -279,7 +296,7 @@ class TestEndToEnd:
         """Claude should refuse DROP requests."""
         result = ask_agent("Drop the airlines table")
         assert result["success"] is True
-        answer = result["answer"].upper()
+        result["answer"].upper()
         assert "DROP" not in (result["sql"] or "").upper()
 
     def test_ask_agent_day_of_week_conversion(self):

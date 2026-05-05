@@ -1,18 +1,18 @@
-
 # Entry point — FastAPI app, all routes defined here
 # Entry point — FastAPI app, all routes defined here
 
+from typing import Optional
+
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
-import uvicorn
 
+from backend.agent import ask_agent, get_history, reset_conversation
 from backend.config import get_settings
-from backend.db import test_connection, execute_query
+from backend.db import execute_query, test_connection
+from backend.rules import add_custom_rule, get_rules_for_claude
 from backend.schema_extractor import get_schema_for_claude
-from backend.rules import get_rules_for_claude, add_custom_rule
-from backend.agent import ask_agent, reset_conversation, get_history
 
 settings = get_settings()
 
@@ -20,7 +20,7 @@ settings = get_settings()
 app = FastAPI(
     title="SQL AI Agent",
     description="Natural language to SQL using Claude AI",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # ── CORS Middleware ────────────────────────────────────
@@ -51,14 +51,11 @@ class RuleRequest(BaseModel):
 
 # ── Routes ─────────────────────────────────────────────
 
+
 @app.get("/")
 def root():
     """Health check — is the API alive?"""
-    return {
-        "status": "online",
-        "app":    "SQL AI Agent",
-        "version": "1.0.0"
-    }
+    return {"status": "online", "app": "SQL AI Agent", "version": "1.0.0"}
 
 
 @app.get("/health")
@@ -69,9 +66,9 @@ def health_check():
     """
     db_ok = test_connection()
     return {
-        "status":   "healthy" if db_ok else "degraded",
+        "status": "healthy" if db_ok else "degraded",
         "database": "connected" if db_ok else "disconnected",
-        "ai":       "ready"
+        "ai": "ready",
     }
 
 
@@ -82,27 +79,18 @@ def ask_question(request: QuestionRequest):
     Claude returns SQL + explanation.
     """
     if not request.question.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Question cannot be empty"
-        )
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    result = ask_agent(
-        user_question=request.question,
-        reset_history=request.reset_history
-    )
+    result = ask_agent(user_question=request.question, reset_history=request.reset_history)
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=500,
-            detail=result["error"]
-        )
+        raise HTTPException(status_code=500, detail=result["error"])
 
     return {
-        "success":        True,
-        "question":       request.question,
-        "answer":         result["answer"],
-        "history_length": result["history_length"]
+        "success": True,
+        "question": request.question,
+        "answer": result["answer"],
+        "history_length": result["history_length"],
     }
 
 
@@ -113,10 +101,7 @@ def run_query(request: QueryRequest):
     Used for running queries Claude generates.
     """
     if not request.query.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Query cannot be empty"
-        )
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
 
     # Basic safety check
     dangerous = ["DROP", "TRUNCATE", "DELETE", "ALTER"]
@@ -125,16 +110,13 @@ def run_query(request: QueryRequest):
         if word in query_upper:
             raise HTTPException(
                 status_code=403,
-                detail=f"Dangerous operation '{word}' not allowed via API"
+                detail=f"Dangerous operation '{word}' not allowed via API",
             )
 
     result = execute_query(request.query)
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=400,
-            detail=result.get("error", "Query failed")
-        )
+        raise HTTPException(status_code=400, detail=result.get("error", "Query failed"))
 
     return result
 
@@ -146,10 +128,7 @@ def get_schema():
     Used by frontend Context Panel.
     """
     schema = get_schema_for_claude()
-    return {
-        "success": True,
-        "schema":  schema
-    }
+    return {"success": True, "schema": schema}
 
 
 @app.get("/rules")
@@ -159,10 +138,7 @@ def get_rules():
     Used by frontend Context Panel.
     """
     rules = get_rules_for_claude()
-    return {
-        "success": True,
-        "rules":   rules
-    }
+    return {"success": True, "rules": rules}
 
 
 @app.post("/rules")
@@ -171,32 +147,19 @@ def add_rule(request: RuleRequest):
     Add a new business rule at runtime.
     No restart needed.
     """
-    success = add_custom_rule(
-        category=request.category,
-        rule=request.rule
-    )
+    success = add_custom_rule(category=request.category, rule=request.rule)
 
     if not success:
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to add rule"
-        )
+        raise HTTPException(status_code=500, detail="Failed to add rule")
 
-    return {
-        "success":  True,
-        "message":  f"Rule added to '{request.category}'"
-    }
+    return {"success": True, "message": f"Rule added to '{request.category}'"}
 
 
 @app.get("/history")
 def get_conversation_history():
     """Return current conversation history."""
     history = get_history()
-    return {
-        "success": True,
-        "history": history,
-        "length":  len(history)
-    }
+    return {"success": True, "history": history, "length": len(history)}
 
 
 @app.post("/reset")
@@ -211,5 +174,5 @@ if __name__ == "__main__":
         "backend.main:app",
         host="0.0.0.0",
         port=int(settings.app_port),
-        reload=settings.debug
+        reload=settings.debug,
     )
