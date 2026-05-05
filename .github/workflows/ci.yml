@@ -1,16 +1,13 @@
 name: CI
-
 on:
   push:
     branches: [main, dev, "feature/**"]
   pull_request:
     branches: [main, dev]
-
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-
     services:
       mysql:
         image: mysql:8.0
@@ -25,34 +22,28 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Create and seed database
         run: |
           mysql -h 127.0.0.1 -u root airlines_db < backend/migrations/init.sql
-
       - name: Run pre-commit hooks
         uses: pre-commit/action@v3.0.1
       - name: Debug Claude API connection
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} # pragma: allowlist secret
         run: |
           python3 -c "
-          import anthropic
-          import os
+          import anthropic, os
           key = os.getenv('ANTHROPIC_API_KEY', '')
           print(f'Key length: {len(key)}')
           print(f'Key prefix: {key[:10]}...')
@@ -67,10 +58,9 @@ jobs:
           except Exception as e:
               print(f'Claude API ERROR: {type(e).__name__}: {e}')
           "
-
       - name: Run Phase 2 tests
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} # pragma: allowlist secret
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_NAME: airlines_db
@@ -81,3 +71,24 @@ jobs:
           RULES_FILE: rules.yaml
         run: |
           pytest tests/test_phase2.py -v --tb=short
+
+  docker-build:
+    name: Docker Build & Validate
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        run: docker build -t sql-ai-agent:ci .
+      - name: Validate image exists
+        run: docker images sql-ai-agent:ci
+      - name: Validate docker-compose config
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-password # pragma: allowlist secret
+          MYSQL_DATABASE: airlines_db
+          MYSQL_USER: ci-user
+          MYSQL_PASSWORD: ci-password # pragma: allowlist secret
+        run: docker compose config

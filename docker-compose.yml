@@ -1,0 +1,74 @@
+
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: airlines_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-airlines_db}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # In docker-compose.yml, replace the db healthcheck with:
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - agent_net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sql_ai_agent
+    restart: unless-stopped
+    environment:
+      # Matches pydantic Settings exactly (DB_HOST → db_host)
+      DB_HOST: db                                      # ← "db" = Docker service name
+      DB_PORT: "3306"                                  # ← internal port, not 3307
+      DB_NAME: ${MYSQL_DATABASE:-airlines_db}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      # App
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      APP_ENV: ${APP_ENV:-production}
+      APP_PORT: "8000"
+      DEBUG: "false"
+      RULES_FILE: ${RULES_FILE:-rules.yaml}
+      # AWS (Phase 5 — passthrough, empty is fine for now)
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/configs:/app/backend/configs:ro
+    networks:
+      - agent_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  agent_net:
+    driver: bridge
