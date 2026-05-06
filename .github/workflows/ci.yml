@@ -125,11 +125,29 @@ jobs:
           aws ecs update-service             --cluster sql-ai-agent-cluster             --service sql-ai-agent-service             --force-new-deployment             --region us-east-1
       - name: Wait for deployment
         run: |
-          aws ecs wait services-stable \
-            --cluster sql-ai-agent-cluster \
-            --services sql-ai-agent-service \
-            --region us-east-1
-        timeout-minutes: 20
+          echo "Waiting for ECS service to stabilize..."
+          for i in $(seq 1 24); do
+            RUNNING=$(aws ecs describe-services \
+              --cluster sql-ai-agent-cluster \
+              --services sql-ai-agent-service \
+              --region us-east-1 \
+              --query 'services[0].runningCount' \
+              --output text)
+            DESIRED=$(aws ecs describe-services \
+              --cluster sql-ai-agent-cluster \
+              --services sql-ai-agent-service \
+              --region us-east-1 \
+              --query 'services[0].desiredCount' \
+              --output text)
+            echo "Attempt $i: running=$RUNNING desired=$DESIRED"
+            if [ "$RUNNING" = "$DESIRED" ] && [ "$DESIRED" != "0" ]; then
+              echo "Service is stable"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Service did not stabilize in time"
+          exit 1
       - name: Verify deployment
         run: |
           aws ecs describe-services             --cluster sql-ai-agent-cluster             --services sql-ai-agent-service             --query "services[0].{Running:runningCount,Desired:desiredCount}"             --output table             --region us-east-1
