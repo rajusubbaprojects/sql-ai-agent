@@ -129,3 +129,7 @@ jobs:
       - name: Verify deployment
         run: |
           aws ecs describe-services             --cluster sql-ai-agent-cluster             --services sql-ai-agent-service             --query "services[0].{Running:runningCount,Desired:desiredCount}"             --output table             --region us-east-1
+      - name: Smoke test via ALB
+        run: |
+         sleep 30
+         curl -f http://${{ secrets.ALB_DNS }}/health
