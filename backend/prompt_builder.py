@@ -39,18 +39,27 @@ IMPORTANT INSTRUCTIONS:
 
 
 def build_user_message(question: str) -> str:
-    """
-    Wrap the user's raw question in a consistent format
-    so Claude knows exactly what's being asked.
-    """
     return f"""Please answer this question about the database:
 
 {question}
 
-Respond with:
-1. SQL: <your query here>
-2. EXPLANATION: <plain English explanation of what the query does>
-3. ASSUMPTIONS: <any assumptions you made, if applicable>
+You MUST respond in exactly this format:
+
+```sql
+YOUR_SQL_QUERY_HERE
+```
+
+EXPLANATION: <plain English explanation of what the query does>
+ASSUMPTIONS: <any assumptions you made, if applicable>
+
+Rules:
+- The SQL block is mandatory — always include it
+- Only use SELECT statements
+- Use valid MySQL syntax
+- If the question cannot be answered from this database, still respond with:
+```sql
+SELECT 'Unable to answer: <reason>' AS message;
+```
 """
 
 

@@ -13,6 +13,35 @@ from backend.logger import get_logger, query_logger
 from backend.rules import add_custom_rule, get_rules_for_claude
 from backend.schema_extractor import get_schema_for_claude
 
+try:
+    from aws_xray_sdk.core import xray_recorder
+    from aws_xray_sdk.ext.fastapi.middleware import XRayMiddleware
+
+    XRAY_ENABLED = True
+except ImportError:
+    XRAY_ENABLED = False
+
+logger = get_logger("sql-ai-agent.main")
+settings = get_settings()
+
+app = FastAPI(
+    title="SQL AI Agent",
+    description="Natural language to SQL using Claude AI",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+if XRAY_ENABLED:
+    xray_recorder.configure(service="sql-ai-agent", daemon_address="127.0.0.1:2000")
+    app.add_middleware(XRayMiddleware, recorder=xray_recorder)
+
 logger = get_logger("sql-ai-agent.main")
 settings = get_settings()
 
