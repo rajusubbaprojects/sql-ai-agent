@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend.agent import ask_agent, get_history, reset_conversation
+from backend.agent import ask_agent, reset_conversation
 from backend.config import get_settings
 from backend.db import execute_query, test_connection
 from backend.logger import get_logger, query_logger
@@ -77,6 +77,7 @@ async def log_requests(request, call_next):
 class QuestionRequest(BaseModel):
     question: str
     reset_history: Optional[bool] = False
+    session_id: str = "default"
 
 
 class QueryRequest(BaseModel):
@@ -107,33 +108,49 @@ def health_check():
 def ask_question(request: QuestionRequest):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
-    result = ask_agent(user_question=request.question, reset_history=request.reset_history)
+    result = ask_agent(
+        user_question=request.question,
+        reset_history=request.reset_history,
+        session_id=request.session_id,
+    )
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return {
         "success": True,
         "question": request.question,
         "answer": result["answer"],
+        "session_id": result["session_id"],
         "history_length": result["history_length"],
     }
 
 
 @app.post("/query")
-def run_query(request: QueryRequest):
-    if not request.query.strip():
-        raise HTTPException(status_code=400, detail="Query cannot be empty")
-    dangerous = ["DROP", "TRUNCATE", "DELETE", "ALTER"]
-    query_upper = request.query.upper()
-    for word in dangerous:
-        if word in query_upper:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Dangerous operation '{word}' not allowed via API",
-            )
-    result = execute_query(request.query)
+def ask_and_run(request: QuestionRequest):
+    if not request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+    result = ask_agent(
+        user_question=request.question,
+        reset_history=request.reset_history,
+        session_id=request.session_id,
+    )
     if not result["success"]:
-        raise HTTPException(status_code=400, detail=result.get("error", "Query failed"))
-    return result
+        raise HTTPException(status_code=500, detail=result["error"])
+    sql = result.get("sql")
+    query_result = None
+    if sql and sql.strip().upper().startswith("SELECT"):
+        query_result = execute_query(sql)
+    return {
+        "success": True,
+        "question": request.question,
+        "answer": result["answer"],
+        "sql": sql,
+        "data": query_result.get("data") if query_result and query_result.get("success") else None,
+        "query_error": (
+            query_result.get("error") if query_result and not query_result.get("success") else None
+        ),
+        "session_id": result["session_id"],
+        "history_length": result["history_length"],
+    }
 
 
 @app.get("/schema")
@@ -154,12 +171,6 @@ def add_rule(request: RuleRequest):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add rule")
     return {"success": True, "message": f"Rule added to '{request.category}'"}
-
-
-@app.get("/history")
-def get_conversation_history():
-    history = get_history()
-    return {"success": True, "history": history, "length": len(history)}
 
 
 @app.post("/reset")

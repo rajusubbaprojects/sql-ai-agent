@@ -5,6 +5,7 @@ import anthropic
 
 from backend.config import get_settings
 from backend.logger import get_logger, query_logger
+from backend.memory import session_memory
 from backend.prompt_builder import build_messages, build_system_prompt
 
 try:
@@ -20,7 +21,6 @@ except ImportError:
 
 logger = get_logger("sql-ai-agent.agent")
 
-_history: list = []
 _client = None
 
 
@@ -32,82 +32,84 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def ask_agent(user_question: str, reset_history: bool = False, reset: bool = False) -> dict:
-    global _history
-
+def ask_agent(
+    user_question: str,
+    reset_history: bool = False,
+    reset: bool = False,
+    session_id: str = "default",
+) -> dict:
     if reset_history or reset:
-        _history = []
+        session_memory.reset(session_id)
 
-    with xray_recorder.in_segment("sql-ai-agent") as segment:
-        segment.put_annotation("question", user_question[:200])
+    history = session_memory.get_history(session_id)
 
-        try:
-            client = _get_client()
+    try:
+        client = _get_client()
 
-            with xray_recorder.in_subsegment("claude-ai"):
-                start = time.time()
-                response = client.messages.create(
-                    model="claude-sonnet-4-5",
-                    max_tokens=1024,
-                    system=build_system_prompt(),
-                    messages=build_messages(user_question, _history),
-                )
-                ai_latency_ms = (time.time() - start) * 1000
+        start = time.time()
+        response = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=1024,
+            system=build_system_prompt(),
+            messages=build_messages(user_question, history),
+        )
+        ai_latency_ms = (time.time() - start) * 1000
 
-            answer = response.content[0].text
-            sql = _extract_sql(answer)
+        answer = response.content[0].text
+        sql = _validate_sql(_extract_sql(answer), user_question)
 
-            _history.append({"role": "user", "content": user_question})
-            _history.append({"role": "assistant", "content": answer})
+        session_memory.add_turn(session_id, "user", user_question)
+        session_memory.add_turn(session_id, "assistant", answer)
 
-            segment.put_annotation("success", True)
-            segment.put_metadata("sql", sql or "")
+        updated_history = session_memory.get_history(session_id)
 
-            query_logger.log_query(
-                query=user_question,
-                sql=sql or "",
-                success=True,
-                latency_ms=ai_latency_ms,
-            )
+        query_logger.log_query(
+            query=user_question,
+            sql=sql or "",
+            success=True,
+            latency_ms=ai_latency_ms,
+        )
 
-            logger.info(
-                "agent_response",
-                extra={
-                    "event": "agent_response",
-                    "question": user_question,
-                    "has_sql": sql is not None,
-                    "ai_latency_ms": round(ai_latency_ms, 2),
-                    "history_length": len(_history),
-                },
-            )
+        logger.info(
+            "agent_response",
+            extra={
+                "event": "agent_response",
+                "question": user_question,
+                "session_id": session_id,
+                "has_sql": sql is not None,
+                "ai_latency_ms": round(ai_latency_ms, 2),
+                "history_length": len(updated_history),
+            },
+        )
 
-            return {
-                "success": True,
-                "answer": answer,
-                "sql": sql,
-                "history": _history,
-                "history_length": len(_history),
-            }
+        return {
+            "success": True,
+            "answer": answer,
+            "sql": sql,
+            "history": updated_history,
+            "history_length": len(updated_history),
+            "session_id": session_id,
+        }
 
-        except Exception as e:
-            segment.put_annotation("success", False)
-            logger.error(
-                "agent_error",
-                extra={
-                    "event": "agent_error",
-                    "question": user_question,
-                    "error": str(e),
-                },
-            )
-            return {
-                "success": False,
+    except Exception as e:
+        logger.error(
+            "agent_error",
+            extra={
+                "event": "agent_error",
+                "question": user_question,
+                "session_id": session_id,
                 "error": str(e),
-                "history_length": len(_history),
-            }
+            },
+        )
+        return {
+            "success": False,
+            "error": str(e),
+            "history_length": 0,
+            "session_id": session_id,
+        }
 
 
 def _validate_sql(sql: str | None, question: str) -> str:
-    """Ensure we always have executable SQL."""
     if sql and sql.strip().upper().startswith("SELECT"):
         return sql
     return f"SELECT 'Could not generate SQL for: {question[:50]}' AS message"
@@ -123,11 +125,10 @@ def _extract_sql(text: str) -> str | None:
     return None
 
 
-def reset_conversation() -> dict:
-    global _history
-    _history = []
+def reset_conversation(session_id: str = "default") -> dict:
+    session_memory.reset(session_id)
     return {"success": True, "message": "Conversation reset"}
 
 
-def get_history() -> list:
-    return _history
+def get_history(session_id: str = "default") -> list:
+    return session_memory.get_history(session_id)
