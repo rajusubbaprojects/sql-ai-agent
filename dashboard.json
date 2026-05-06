@@ -1,0 +1,70 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ECS CPU utilization",
+        "region": "us-east-1",
+        "metrics": [["AWS/ECS","CPUUtilization","ClusterName","sql-ai-agent-cluster","ServiceName","sql-ai-agent-service"]],
+        "period": 300,
+        "stat": "Average",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ECS memory utilization",
+        "region": "us-east-1",
+        "metrics": [["AWS/ECS","MemoryUtilization","ClusterName","sql-ai-agent-cluster","ServiceName","sql-ai-agent-service"]],
+        "period": 300,
+        "stat": "Average",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ALB request count",
+        "region": "us-east-1",
+        "metrics": [["AWS/ApplicationELB","RequestCount","LoadBalancer","app/sql-ai-agent-alb/fa318aaf57ee7d0f"]],
+        "period": 300,
+        "stat": "Sum",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ALB target response time",
+        "region": "us-east-1",
+        "metrics": [["AWS/ApplicationELB","TargetResponseTime","LoadBalancer","app/sql-ai-agent-alb/fa318aaf57ee7d0f"]],
+        "period": 300,
+        "stat": "Average",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ALB 5xx errors",
+        "region": "us-east-1",
+        "metrics": [["AWS/ApplicationELB","HTTPCode_Target_5XX_Count","LoadBalancer","app/sql-ai-agent-alb/fa318aaf57ee7d0f"]],
+        "period": 300,
+        "stat": "Sum",
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Healthy host count",
+        "region": "us-east-1",
+        "metrics": [["AWS/ApplicationELB","HealthyHostCount","LoadBalancer","app/sql-ai-agent-alb/fa318aaf57ee7d0f","TargetGroup","targetgroup/sql-ai-agent-tg/a0a20e66192c8907"]],
+        "period": 300,
+        "stat": "Average",
+        "view": "timeSeries"
+      }
+    }
+  ]
+}
