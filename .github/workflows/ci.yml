@@ -125,7 +125,11 @@ jobs:
           aws ecs update-service             --cluster sql-ai-agent-cluster             --service sql-ai-agent-service             --force-new-deployment             --region us-east-1
       - name: Wait for deployment
         run: |
-          aws ecs wait services-stable             --cluster sql-ai-agent-cluster             --services sql-ai-agent-service             --region us-east-1
+          aws ecs wait services-stable \
+            --cluster sql-ai-agent-cluster \
+            --services sql-ai-agent-service \
+            --region us-east-1
+        timeout-minutes: 15
       - name: Verify deployment
         run: |
           aws ecs describe-services             --cluster sql-ai-agent-cluster             --services sql-ai-agent-service             --query "services[0].{Running:runningCount,Desired:desiredCount}"             --output table             --region us-east-1
