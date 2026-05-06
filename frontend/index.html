@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL AI Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181c22;
+    --border: #1e2530;
+    --border2: #2a3340;
+    --amber: #e8a020;
+    --amber-dim: #9a6510;
+    --amber-glow: rgba(232,160,32,0.08);
+    --amber-glow2: rgba(232,160,32,0.15);
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --text: #c8d4e0;
+    --text2: #7a8fa0;
+    --text3: #3d5060;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 14px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo-mark {
+    width: 28px; height: 28px;
+    border: 1.5px solid var(--amber);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--amber);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .status-dot { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--text2); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .session-badge { font-family: var(--mono); font-size: 10px; color: var(--text3); border: 1px solid var(--border); padding: 3px 8px; }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  .sidebar {
+    width: 220px;
+    border-right: 1px solid var(--border);
+    background: var(--bg2);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-section { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+
+  .sidebar-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+
+  .quick-btn {
+    display: block; width: 100%;
+    text-align: left; padding: 7px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: var(--sans); font-size: 11px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .quick-btn:hover { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
+
+  .sidebar-stats { padding: 14px 16px; flex: 1; overflow-y: auto; }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .stat-label { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+  .stat-val { font-size: 10px; color: var(--amber); font-family: var(--mono); }
+
+  .new-chat-btn {
+    margin: 12px 16px;
+    padding: 8px 12px;
+    border: 1px solid var(--amber-dim);
+    background: transparent;
+    color: var(--amber);
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: calc(100% - 32px);
+  }
+  .new-chat-btn:hover { background: var(--amber-glow2); }
+
+  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .messages { flex: 1; overflow-y: auto; padding: 20px 24px; scroll-behavior: smooth; }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px; color: var(--text3); }
+  .welcome-logo { font-family: var(--mono); font-size: 42px; font-weight: 300; color: var(--amber); opacity: 0.3; line-height: 1; margin-bottom: 16px; }
+  .welcome h2 { font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .welcome p { font-size: 12px; max-width: 360px; line-height: 1.6; }
+
+  .msg { margin-bottom: 20px; }
+
+  .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+  .msg-role { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; border: 1px solid; }
+  .msg-role.user { color: var(--amber); border-color: var(--amber-dim); }
+  .msg-role.agent { color: var(--text2); border-color: var(--border2); }
+
+  .msg-time { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+
+  .msg-body { padding: 12px 16px; border-left: 2px solid; font-size: 13px; line-height: 1.65; }
+  .msg-body.user { border-color: var(--amber-dim); background: var(--amber-glow); color: var(--text); }
+  .msg-body.agent { border-color: var(--border2); background: var(--bg3); color: var(--text); }
+  .msg-body.error { border-color: var(--red); background: rgba(231,76,60,0.06); color: #e87060; }
+
+  .msg-body p { margin-bottom: 8px; }
+  .msg-body p:last-child { margin-bottom: 0; }
+
+  .sql-block { margin: 10px 0; border: 1px solid var(--border2); overflow: hidden; }
+  .sql-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+  .sql-tag { font-family: var(--mono); font-size: 9px; color: var(--amber); letter-spacing: 0.1em; }
+  .copy-btn { font-family: var(--mono); font-size: 9px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 4px; transition: color 0.1s; }
+  .copy-btn:hover { color: var(--amber); }
+  .sql-code { font-family: var(--mono); font-size: 11px; padding: 10px 12px; color: #7ecfb3; white-space: pre-wrap; overflow-x: auto; line-height: 1.55; }
+
+  .results-wrap { margin: 10px 0; border: 1px solid var(--border2); overflow: hidden; }
+  .results-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+  .results-tag { font-family: var(--mono); font-size: 9px; color: var(--green); letter-spacing: 0.1em; }
+  .results-count { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+  .table-scroll { overflow-x: auto; max-height: 260px; overflow-y: auto; }
+  .table-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
+  table.results-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  .results-table th { background: var(--bg3); color: var(--amber); font-weight: 500; padding: 6px 12px; text-align: left; border-bottom: 1px solid var(--border2); white-space: nowrap; position: sticky; top: 0; font-size: 10px; letter-spacing: 0.06em; }
+  .results-table td { padding: 5px 12px; color: var(--text2); border-bottom: 1px solid var(--border); white-space: nowrap; font-size: 11px; }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
+
+  .typing { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-left: 2px solid var(--border2); background: var(--bg3); color: var(--text3); font-family: var(--mono); font-size: 11px; margin-bottom: 20px; }
+  .typing-dots span { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--amber); margin: 0 1px; animation: bounce 1.2s infinite; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-4px); } }
+
+  .input-area { padding: 14px 24px 18px; border-top: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
+  .input-row { display: flex; align-items: flex-end; gap: 10px; }
+  .input-box { flex: 1; position: relative; }
+
+  #query-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--sans); font-size: 13px;
+    padding: 10px 14px;
+    resize: none;
+    min-height: 42px;
+    max-height: 120px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.15s;
+    overflow-y: auto;
+  }
+  #query-input::placeholder { color: var(--text3); }
+  #query-input:focus { border-color: var(--amber-dim); }
+
+  .send-btn { padding: 10px 18px; background: var(--amber); border: none; color: #000; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; transition: all 0.15s; white-space: nowrap; align-self: stretch; min-height: 42px; }
+  .send-btn:hover { background: #f0b030; }
+  .send-btn:disabled { background: var(--text3); cursor: not-allowed; }
+
+  .input-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .endpoint-sel { display: flex; gap: 6px; }
+  .ep-btn { padding: 3px 9px; border: 1px solid var(--border2); background: transparent; color: var(--text3); font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: all 0.12s; }
+  .ep-btn.active { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
+  .ep-btn:hover:not(.active) { border-color: var(--border2); color: var(--text2); }
+  .input-hint { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+  kbd { display: inline-block; border: 1px solid var(--border2); padding: 1px 4px; font-family: var(--mono); font-size: 9px; color: var(--text3); margin: 0 1px; }
+</style>
+</head>
+<body>
+
+<!-- Injected at deploy time by CI — never hardcoded in source -->
+<script>
+  window.APP_CONFIG = {
+    albUrl: "http://sql-ai-agent-alb-1094917995.us-east-1.elb.amazonaws.com",
+    apiKey: "__FRONTEND_API_KEY__"  // pragma: allowlist secret
+  };
+</script>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">AI</div>
+    <div>
+      <div class="header-title">SQL AI Agent</div>
+      <div class="header-sub">airlines_db // AWS RDS</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot">
+      <div class="dot"></div>
+      <span id="status-text">connecting...</span>
+    </div>
+    <div class="session-badge" id="session-badge">session: default</div>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick queries</div>
+      <button class="quick-btn" onclick="sendQuick('Show me the top 5 airlines by total flights')">Top airlines by flights</button>
+      <button class="quick-btn" onclick="sendQuick('What are the most delayed routes?')">Most delayed routes</button>
+      <button class="quick-btn" onclick="sendQuick('Show average fare by airline class')">Avg fare by class</button>
+      <button class="quick-btn" onclick="sendQuick('Which airports have the most cancellations?')">Airport cancellations</button>
+      <button class="quick-btn" onclick="sendQuick('Show me flight count by month this year')">Monthly flight volume</button>
+    </div>
+    <div class="sidebar-stats">
+      <div class="sidebar-label">Session info</div>
+      <div class="stat-row"><span class="stat-label">queries</span><span class="stat-val" id="query-count">0</span></div>
+      <div class="stat-row"><span class="stat-label">endpoint</span><span class="stat-val" id="ep-display">ask-and-run</span></div>
+      <div class="stat-row"><span class="stat-label">mode</span><span class="stat-val">claude-sonnet</span></div>
+      <div class="stat-row"><span class="stat-label">db</span><span class="stat-val">airlines_db</span></div>
+    </div>
+    <button class="new-chat-btn" onclick="newChat()">+ new session</button>
+  </aside>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-logo">_</div>
+        <h2>SQL AI Agent — Phase 8</h2>
+        <p>Ask a question about the airlines database in plain English. The agent will generate SQL, run it, and explain the results.</p>
+      </div>
+    </div>
+    <div class="input-area">
+      <div class="input-row">
+        <div class="input-box">
+          <textarea id="query-input" placeholder="Ask about flights, routes, fares, delays..." rows="1"></textarea>
+        </div>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">SEND</button>
+      </div>
+      <div class="input-meta">
+        <div class="endpoint-sel">
+          <button class="ep-btn active" id="ep-ask" onclick="setEndpoint('ask-and-run')">ask-and-run</button>
+          <button class="ep-btn" id="ep-stream" onclick="setEndpoint('ask-stream')">stream</button>
+        </div>
+        <div class="input-hint"><kbd>Enter</kbd> send &nbsp;<kbd>Shift+Enter</kbd> newline</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ALB = window.APP_CONFIG.albUrl;
+  const API_KEY = window.APP_CONFIG.apiKey;
+  let sessionId = 'default';
+  let currentEndpoint = 'ask-and-run';
+  let queryCount = 0;
+  let isLoading = false;
+
+  function setEndpoint(ep) {
+    currentEndpoint = ep;
+    document.getElementById('ep-ask').classList.toggle('active', ep === 'ask-and-run');
+    document.getElementById('ep-stream').classList.toggle('active', ep === 'ask-stream');
+    document.getElementById('ep-display').textContent = ep;
+  }
+
+  function now() {
+    return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function hideWelcome() {
+    const w = document.getElementById('welcome');
+    if (w) w.remove();
+  }
+
+  function appendMessage(role, content, isHTML) {
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg';
+    div.innerHTML = `
+      <div class="msg-header">
+        <span class="msg-role ${role}">${role === 'user' ? 'USER' : 'AGENT'}</span>
+        <span class="msg-time">${now()}</span>
+      </div>
+      <div class="msg-body ${role}">${isHTML ? content : escHtml(content)}</div>
+    `;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div.querySelector('.msg-body');
+  }
+
+  function appendError(text) {
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg';
+    div.innerHTML = `
+      <div class="msg-header">
+        <span class="msg-role agent">ERROR</span>
+        <span class="msg-time">${now()}</span>
+      </div>
+      <div class="msg-body error">${escHtml(text)}</div>
+    `;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.id = 'typing-indicator';
+    div.className = 'typing';
+    div.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div><span>agent processing...</span>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function buildResultHTML(data) {
+    let html = '';
+    if (data.sql || data.query) {
+      const sql = data.sql || data.query;
+      html += `<div class="sql-block">
+        <div class="sql-header">
+          <span class="sql-tag">SQL // GENERATED</span>
+          <button class="copy-btn" onclick="copySQL(this, \`${escHtml(sql)}\`)">copy</button>
+        </div>
+        <div class="sql-code">${escHtml(sql)}</div>
+      </div>`;
+    }
+    if (data.explanation || data.answer || data.response) {
+      const ans = data.explanation || data.answer || data.response;
+      html += `<p style="margin: 10px 0 6px; color: var(--text);">${escHtml(ans)}</p>`;
+    }
+    if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+      const cols = Object.keys(data.results[0]);
+      const rows = data.results.slice(0, 50);
+      html += `<div class="results-wrap">
+        <div class="results-header">
+          <span class="results-tag">RESULTS</span>
+          <span class="results-count">${data.results.length} row${data.results.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="table-scroll">
+          <table class="results-table">
+            <thead><tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(r => `<tr>${cols.map(c => `<td>${escHtml(r[c] == null ? 'NULL' : r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+      if (data.results.length > 50) {
+        html += `<p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;">... showing 50 of ${data.results.length} rows</p>`;
+      }
+    }
+    if (!html) html = `<p>${escHtml(JSON.stringify(data, null, 2))}</p>`;
+    return html;
+  }
+
+  function copySQL(btn, sql) {
+    navigator.clipboard.writeText(sql).then(() => {
+      btn.textContent = 'copied!';
+      setTimeout(() => btn.textContent = 'copy', 1500);
+    });
+  }
+
+  async function sendMessage() {
+    if (isLoading) return;
+    const input = document.getElementById('query-input');
+    const question = input.value.trim();
+    if (!question) return;
+
+    hideWelcome();
+    isLoading = true;
+    document.getElementById('send-btn').disabled = true;
+    input.value = '';
+    input.style.height = 'auto';
+
+    appendMessage('user', question, false);
+    queryCount++;
+    document.getElementById('query-count').textContent = queryCount;
+    showTyping();
+
+    try {
+      if (currentEndpoint === 'ask-stream') {
+        await streamRequest(question);
+      } else {
+        await askAndRun(question);
+      }
+    } catch (err) {
+      hideTyping();
+      appendError('Network error: ' + err.message);
+    }
+
+    isLoading = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+
+  async function askAndRun(question) {
+    const res = await fetch(`${ALB}/ask-and-run`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify({ question, session_id: sessionId })
+    });
+    hideTyping();
+    if (!res.ok) {
+      let errText = `HTTP ${res.status}`;
+      try { const e = await res.json(); errText += ': ' + (e.detail || JSON.stringify(e)); } catch {}
+      appendError(errText);
+      return;
+    }
+    const data = await res.json();
+    appendMessage('agent', buildResultHTML(data), true);
+  }
+
+  async function streamRequest(question) {
+    const res = await fetch(`${ALB}/ask-stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify({ question, session_id: sessionId })
+    });
+    hideTyping();
+    if (!res.ok) {
+      let errText = `HTTP ${res.status}`;
+      try { const e = await res.json(); errText += ': ' + (e.detail || JSON.stringify(e)); } catch {}
+      appendError(errText);
+      return;
+    }
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg';
+    div.innerHTML = `
+      <div class="msg-header">
+        <span class="msg-role agent">AGENT</span>
+        <span class="msg-time">${now()}</span>
+      </div>
+      <div class="msg-body agent" id="stream-body"></div>
+    `;
+    msgs.appendChild(div);
+    const body = document.getElementById('stream-body');
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const raw = line.slice(6).trim();
+          if (raw === '[DONE]') break;
+          try {
+            const obj = JSON.parse(raw);
+            if (obj.chunk) body.innerHTML += escHtml(obj.chunk);
+            else if (obj.text) body.innerHTML += escHtml(obj.text);
+            else if (typeof obj === 'string') body.innerHTML += escHtml(obj);
+          } catch { body.innerHTML += escHtml(raw); }
+          msgs.scrollTop = msgs.scrollHeight;
+        }
+      }
+    }
+  }
+
+  function sendQuick(q) {
+    document.getElementById('query-input').value = q;
+    sendMessage();
+  }
+
+  function newChat() {
+    sessionId = 'session-' + Math.random().toString(36).slice(2, 8);
+    queryCount = 0;
+    document.getElementById('query-count').textContent = '0';
+    document.getElementById('session-badge').textContent = 'session: ' + sessionId.slice(0, 12);
+    const msgs = document.getElementById('messages');
+    msgs.innerHTML = `<div class="welcome" id="welcome">
+      <div class="welcome-logo">_</div>
+      <h2>New session started</h2>
+      <p>Session ID: ${sessionId}</p>
+    </div>`;
+  }
+
+  document.getElementById('query-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  document.getElementById('query-input').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  // Health check on load
+  (async () => {
+    try {
+      const r = await fetch(`${ALB}/health`);
+      if (!r.ok) throw new Error('non-200');
+      document.getElementById('status-text').textContent = 'connected';
+    } catch {
+      document.getElementById('status-text').textContent = 'unreachable';
+      document.querySelector('.dot').style.background = 'var(--red)';
+      document.querySelector('.dot').style.boxShadow = '0 0 6px var(--red)';
+      document.querySelector('.dot').style.animation = 'none';
+    }
+  })();
+</script>
+</body>
+</html>
