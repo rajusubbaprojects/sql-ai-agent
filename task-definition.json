@@ -1,0 +1,64 @@
+{
+  "family": "sql-ai-agent-task",
+  "taskRoleArn": "arn:aws:iam::490841876782:role/sql-ai-agent-task-role",
+  "executionRoleArn": "arn:aws:iam::490841876782:role/sql-ai-agent-execution-role",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "sql-ai-agent",
+      "image": "490841876782.dkr.ecr.us-east-1.amazonaws.com/sql-ai-agent:latest",
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "RULES_FILE", "value": "rules.yaml"},
+        {"name": "AWS_REGION", "value": "us-east-1"},
+        {"name": "APP_ENV",    "value": "production"},
+        {"name": "APP_PORT",   "value": "8000"},
+        {"name": "DEBUG",      "value": "false"}
+      ],
+      "secrets": [
+        {
+          "name": "DB_HOST",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:490841876782:secret:sql-ai-agent/db-credentials-iMmaqj:host::"
+        },
+        {
+          "name": "DB_PORT",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:490841876782:secret:sql-ai-agent/db-credentials-iMmaqj:port::"
+        },
+        {
+          "name": "DB_NAME",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:490841876782:secret:sql-ai-agent/db-credentials-iMmaqj:dbname::"
+        },
+        {
+          "name": "DB_USER",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:490841876782:secret:sql-ai-agent/db-credentials-iMmaqj:username::"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:490841876782:secret:sql-ai-agent/db-credentials-iMmaqj:password::"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:490841876782:secret:sql-ai-agent/anthropic-api-key-Q4sQXn:ANTHROPIC_API_KEY::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/sql-ai-agent",
+          "awslogs-create-group": "true",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "essential": true
+    }
+  ]
+}
