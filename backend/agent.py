@@ -1,20 +1,19 @@
-# backend/agent.py
-# Claude AI integration — uses prompt_builder for all calls
-
 import re
+import time
 
 import anthropic
 
 from backend.config import get_settings
+from backend.logger import get_logger, query_logger
 from backend.prompt_builder import build_messages, build_system_prompt
 
-# In-memory conversation history (resets on server restart)
+logger = get_logger("sql-ai-agent.agent")
+
 _history: list = []
 _client = None
 
 
 def _get_client() -> anthropic.Anthropic:
-    """Lazy initialize Claude client — reads env vars at call time."""
     global _client
     if _client is None:
         settings = get_settings()
@@ -22,84 +21,87 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-# ── Ask Claude ─────────────────────────────────────────
-
-
-def ask_agent(question: str, reset: bool = False) -> dict:
-    """
-    Send a question to Claude with full schema + rules context.
-
-    Args:
-        question: Natural language question from the user
-        reset:    If True, clears conversation history first
-
-    Returns:
-        dict with answer, sql (if found), and updated history
-    """
+def ask_agent(user_question: str, reset_history: bool = False, reset: bool = False) -> dict:
     global _history
 
-    if reset:
+    if reset_history or reset:
         _history = []
 
     try:
         client = _get_client()
+
+        start = time.time()
         response = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=1024,
             system=build_system_prompt(),
-            messages=build_messages(question, _history),
+            messages=build_messages(user_question, _history),
         )
+        ai_latency_ms = (time.time() - start) * 1000
 
         answer = response.content[0].text
+        sql = _extract_sql(answer)
 
-        _history.append({"role": "user", "content": question})
+        _history.append({"role": "user", "content": user_question})
         _history.append({"role": "assistant", "content": answer})
 
-        sql = _extract_sql(answer)
+        query_logger.log_query(
+            query=user_question,
+            sql=sql or "",
+            success=True,
+            latency_ms=ai_latency_ms,
+        )
+
+        logger.info(
+            "agent_response",
+            extra={
+                "event": "agent_response",
+                "question": user_question,
+                "has_sql": sql is not None,
+                "ai_latency_ms": round(ai_latency_ms, 2),
+                "history_length": len(_history),
+            },
+        )
 
         return {
             "success": True,
             "answer": answer,
             "sql": sql,
             "history": _history,
+            "history_length": len(_history),
         }
 
     except Exception as e:
-        print(f"Claude API error: {type(e).__name__}: {e}")
+        logger.error(
+            "agent_error",
+            extra={
+                "event": "agent_error",
+                "question": user_question,
+                "error": str(e),
+            },
+        )
         return {
             "success": False,
             "error": str(e),
+            "history_length": len(_history),
         }
 
 
-# ── SQL Extractor ──────────────────────────────────────
-
-
 def _extract_sql(text: str) -> str | None:
-    """
-    Pull the SQL query out of Claude's response.
-    Handles both markdown code blocks and plain SQL: prefix.
-    """
     match = re.search(r"```sql\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
     if match:
         return match.group(1).strip()
-
     match = re.search(r"SQL:\s*(SELECT.*?)(?:\n\n|\Z)", text, re.DOTALL | re.IGNORECASE)
     if match:
         return match.group(1).strip()
-
     return None
 
 
-# ── History Helpers ────────────────────────────────────
-
-
-def reset_conversation() -> None:
-    """Clear conversation history."""
+def reset_conversation() -> dict:
     global _history
     _history = []
+    return {"success": True, "message": "Conversation reset"}
 
 
 def get_history() -> list:
-    """Return current conversation history."""
     return _history
