@@ -54,3 +54,8 @@ logs/
 *.sql
 *.sqlite
 *.db
+# Allow known migration and seed files tracked in the repo
+!backend/migrations/*.sql
+!sakila-db/*.sql
+# Ignore the compressed archive — the directory is committed instead
+sakila-db.tar.gz

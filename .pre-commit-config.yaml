@@ -26,6 +26,7 @@ repos:
       - id: check-added-large-files
         name: Block large file commits
         args: ["--maxkb=500"]
+        exclude: "^sakila-db/"
 
       - id: debug-statements
         name: Check for debug statements (pdb, breakpoint)
@@ -37,7 +38,7 @@ repos:
       - id: detect-secrets
         name: Detect hardcoded secrets
         args: ["--baseline", ".secrets.baseline"]
-        exclude: .env.example
+        exclude: "(.env.example|sakila-db/)"
 
   # ── Python formatting ──────────────────────────────
   - repo: https://github.com/psf/black

@@ -36,6 +36,9 @@ jobs:
       - name: Create and seed database
         run: |
           mysql -h 127.0.0.1 -u root airlines_db < backend/migrations/init.sql
+          mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS sakila;"
+          mysql -h 127.0.0.1 -u root < sakila-db/sakila-schema.sql
+          mysql -h 127.0.0.1 -u root < sakila-db/sakila-data.sql
       - name: Run pre-commit hooks
         uses: pre-commit/action@v3.0.1
       - name: Debug Claude API connection

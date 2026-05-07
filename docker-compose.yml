@@ -14,7 +14,10 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/01_airlines_init.sql:ro
+      - ./backend/migrations/create_sakila.sql:/docker-entrypoint-initdb.d/02_sakila_create.sql:ro
+      - ./sakila-db/sakila-schema.sql:/docker-entrypoint-initdb.d/03_sakila_schema.sql:ro
+      - ./sakila-db/sakila-data.sql:/docker-entrypoint-initdb.d/04_sakila_data.sql:ro
     # In docker-compose.yml, replace the db healthcheck with:
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
