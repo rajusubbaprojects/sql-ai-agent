@@ -1,13 +1,10 @@
-# business_rules.yaml
-# These rules are injected into Claude's prompt to guide SQL generation.
-# Edit this file to match your domain knowledge — no code changes needed.
+# business_rules_airlines.yaml
+# Business rules for airlines_db — injected into Claude's prompt.
 
 version: "1.0"
 database: airlines_db
 description: "Airlines flight data — operational rules for SQL generation"
 
-# ── Domain Vocabulary ──────────────────────────────────────────────────
-# Teach Claude what domain terms mean in terms of actual columns/values
 vocabulary:
   - term: "delayed flight"
     definition: "A flight where delay > 15 (minutes)"
@@ -29,8 +26,6 @@ vocabulary:
     definition: "A flight where flight_length <= 90 minutes"
     sql_hint: "WHERE flight_length <= 90"
 
-# ── Column Explanations ────────────────────────────────────────────────
-# Clarify columns whose names aren't self-explanatory
 column_rules:
   - column: "day_of_week"
     explanation: "Integer 1–7 where 1=Monday, 2=Tuesday, ..., 7=Sunday"
@@ -56,9 +51,13 @@ column_rules:
     explanation: "3-letter IATA arrival airport code"
     example: "JFK=New York, SFO=San Francisco, PHX=Phoenix"
 
-# ── Query Rules ────────────────────────────────────────────────────────
-# Hard rules Claude must always follow when generating SQL
 query_rules:
+  - rule: "For COUNT questions (how many, total number of), always return a single aggregate row — never wrap COUNT in a subquery that groups rows. Use SELECT COUNT(*) AS total directly without an outer GROUP BY."
+    priority: high
+
+  - rule: "When the user asks 'how many X', return exactly one row with one number using COUNT(*) or COUNT(DISTINCT col) — do not add GROUP BY unless comparing across groups."
+    priority: high
+
   - rule: "Always exclude cancelled flights (delay = -1) unless the user specifically asks about cancellations"
     priority: high
 
@@ -77,16 +76,12 @@ query_rules:
   - rule: "flight_time_integer is NOT a time type — do not use TIME functions on it"
     priority: high
 
-# ── Output Format Rules ────────────────────────────────────────────────
-# Rules about how Claude should format its response
 output_rules:
   - rule: "Always return the raw SQL query first, then the explanation"
   - rule: "Label the SQL block clearly with 'SQL:' prefix"
   - rule: "Explain what the query does in plain English after the SQL"
   - rule: "If the question is ambiguous, state your assumption before the SQL"
 
-# ── Safety Rules ───────────────────────────────────────────────────────
-# Protect the database from dangerous queries
 safety_rules:
   - rule: "Never generate DROP, TRUNCATE, or ALTER statements"
   - rule: "Never generate INSERT, UPDATE, or DELETE statements unless explicitly told this is allowed"

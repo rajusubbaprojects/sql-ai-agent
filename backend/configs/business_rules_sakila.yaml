@@ -1,0 +1,84 @@
+# business_rules_sakila.yaml
+# Business rules for sakila DB — injected into Claude's prompt.
+
+version: "1.0"
+database: sakila
+description: "Sakila DVD rental store — operational rules for SQL generation"
+
+vocabulary:
+  - term: "popular film"
+    definition: "A film that has been rented more than 20 times"
+    sql_hint: "JOIN inventory i ON f.film_id = i.film_id JOIN rental r ON i.inventory_id = r.inventory_id GROUP BY f.film_id HAVING COUNT(r.rental_id) > 20"
+
+  - term: "active customer"
+    definition: "A customer where active = 1"
+    sql_hint: "WHERE active = 1"
+
+  - term: "top actor"
+    definition: "An actor who has appeared in the most films"
+    sql_hint: "JOIN film_actor fa ON a.actor_id = fa.actor_id GROUP BY a.actor_id ORDER BY COUNT(fa.film_id) DESC"
+
+  - term: "new release"
+    definition: "A film released in the most recent year in the database"
+    sql_hint: "WHERE release_year = (SELECT MAX(release_year) FROM film)"
+
+column_rules:
+  - column: "active"
+    explanation: "Customer status — 1 means active, 0 means inactive"
+    example: "Active customers: WHERE active = 1"
+
+  - column: "rental_rate"
+    explanation: "Cost to rent the film in USD"
+    example: "Cheap films: WHERE rental_rate < 2.00"
+
+  - column: "rental_duration"
+    explanation: "Number of days the film can be rented"
+    example: "Week-long rentals: WHERE rental_duration = 7"
+
+  - column: "length"
+    explanation: "Film length in minutes"
+    example: "Long films: WHERE length > 120"
+
+  - column: "rating"
+    explanation: "MPAA rating — G, PG, PG-13, R, NC-17"
+    example: "Family films: WHERE rating IN ('G', 'PG')"
+
+  - column: "special_features"
+    explanation: "Comma-separated list of special features on the DVD"
+    example: "Has deleted scenes: WHERE special_features LIKE '%Deleted Scenes%'"
+
+  - column: "return_date"
+    explanation: "Date the rental was returned. NULL means not yet returned."
+    example: "Unreturned rentals: WHERE return_date IS NULL"
+
+query_rules:
+  - rule: "For COUNT questions (how many, total number of), always return a single aggregate row — use SELECT COUNT(*) AS total directly. Never wrap in a subquery that produces multiple rows of 1."
+    priority: high
+
+  - rule: "When the user asks 'how many X', return exactly one row with one number using COUNT(*) or COUNT(DISTINCT col) — do not add GROUP BY unless comparing across groups."
+    priority: high
+
+  - rule: "To find films by actor: JOIN actor a → film_actor fa ON a.actor_id = fa.actor_id → film f ON fa.film_id = f.film_id"
+    priority: high
+
+  - rule: "To find rental counts: JOIN film f → inventory i ON f.film_id = i.film_id → rental r ON i.inventory_id = r.inventory_id, then COUNT(r.rental_id)"
+    priority: high
+
+  - rule: "Always filter active = 1 when querying customers unless user asks about inactive customers"
+    priority: medium
+
+  - rule: "Always use LIMIT 20 on SELECT queries unless user asks for all records or an aggregate"
+    priority: medium
+
+  - rule: "Use table aliases: a=actor, f=film, fa=film_actor, i=inventory, r=rental, c=customer"
+    priority: low
+
+output_rules:
+  - rule: "Always return the raw SQL query first, then the explanation"
+  - rule: "Explain what the query does in plain English after the SQL"
+  - rule: "If the question is ambiguous, state your assumption before the SQL"
+
+safety_rules:
+  - rule: "Never generate DROP, TRUNCATE, or ALTER statements"
+  - rule: "Never generate INSERT, UPDATE, or DELETE statements unless explicitly told this is allowed"
+  - rule: "If a question is not related to the database, politely decline and explain why"
