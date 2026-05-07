@@ -116,14 +116,16 @@ def ask_and_run(request: QuestionRequest):
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     sql = result.get("sql")
+    db_name = result.get("db_name", "airlines_db")
     query_result = None
     if sql and sql.strip().upper().startswith("SELECT"):
-        query_result = execute_query(sql)
+        query_result = execute_query(sql, db_name=db_name)
     return {
         "success": True,
         "question": request.question,
         "answer": result["answer"],
         "sql": sql,
+        "db_name": db_name,
         "results": (
             query_result.get("rows") if query_result and query_result.get("success") else None
         ),

@@ -7,18 +7,19 @@ from backend.schema_extractor import get_schema_for_claude
 # ── System Prompt ──────────────────────────────────────
 
 
-def build_system_prompt() -> str:
+def build_system_prompt(schema: str = None) -> str:
     """
-    Build the system prompt Claude receives at the start
-    of every conversation. Contains schema + business rules.
-    Cached at call time — schema and rules are read once.
+    Build the system prompt Claude receives at the start of every conversation.
+    Pass schema directly (pre-fetched by agent after DB routing) or leave
+    None to auto-load from the default database.
     """
-    schema = get_schema_for_claude()
+    if schema is None:
+        schema = get_schema_for_claude()
+
     rules = get_rules_for_claude()
 
     return f"""You are an expert SQL assistant for a MySQL database.
 Your job is to help users query the database using natural language.
-
 You have deep knowledge of the database schema and must follow all
 business rules exactly when generating SQL queries.
 
@@ -69,34 +70,12 @@ SELECT 'Unable to answer: <reason>' AS message;
 def build_messages(question: str, history: list = None) -> list:
     """
     Build the full messages array for Claude API call.
-
-    Args:
-        question: The user's current question
-        history:  List of prior turns [{"role": "user"|"assistant", "content": "..."}]
-
-    Returns:
-        List of message dicts ready for anthropic client
     """
     messages = []
-
-    # Add conversation history (prior turns)
     if history:
         for turn in history:
-            messages.append(
-                {
-                    "role": turn["role"],
-                    "content": turn["content"],
-                }
-            )
-
-    # Add the current question
-    messages.append(
-        {
-            "role": "user",
-            "content": build_user_message(question),
-        }
-    )
-
+            messages.append({"role": turn["role"], "content": turn["content"]})
+    messages.append({"role": "user", "content": build_user_message(question)})
     return messages
 
 
@@ -104,10 +83,7 @@ def build_messages(question: str, history: list = None) -> list:
 
 
 def preview_prompt(question: str, history: list = None) -> dict:
-    """
-    Return the full prompt components for debugging.
-    Useful for seeing exactly what Claude receives.
-    """
+    """Return the full prompt components for debugging."""
     return {
         "system_prompt": build_system_prompt(),
         "messages": build_messages(question, history),
