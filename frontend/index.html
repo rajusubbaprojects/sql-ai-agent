@@ -19,6 +19,7 @@
     --amber-glow: rgba(232,160,32,0.08);
     --amber-glow2: rgba(232,160,32,0.15);
     --green: #2ecc71;
+    --blue: #3b9eff;
     --red: #e74c3c;
     --text: #c8d4e0;
     --text2: #7a8fa0;
@@ -38,6 +39,7 @@
     font-size: 14px;
   }
 
+  /* ── HEADER ── */
   .header {
     display: flex;
     align-items: center;
@@ -47,48 +49,69 @@
     border-bottom: 1px solid var(--border);
     background: var(--bg2);
     flex-shrink: 0;
+    gap: 12px;
   }
-
   .header-left { display: flex; align-items: center; gap: 12px; }
-
   .logo-mark {
     width: 28px; height: 28px;
     border: 1.5px solid var(--amber);
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--amber);
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    flex-shrink: 0;
+    font-family: var(--mono); font-size: 11px;
+    color: var(--amber); font-weight: 600; letter-spacing: -0.5px; flex-shrink: 0;
   }
-
-  .header-title {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--amber);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .header-sub {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text3);
-    letter-spacing: 0.06em;
-  }
-
+  .header-title { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--amber); letter-spacing: 0.08em; text-transform: uppercase; }
+  .header-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 0.06em; }
   .header-right { display: flex; align-items: center; gap: 16px; }
-
   .status-dot { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--text2); }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2.5s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-
   .session-badge { font-family: var(--mono); font-size: 10px; color: var(--text3); border: 1px solid var(--border); padding: 3px 8px; }
 
+  /* ── NAV TABS ── */
+  .nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .nav-tab {
+    padding: 8px 18px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+  .nav-tab:hover { color: var(--text2); }
+  .nav-tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+  .nav-tab .tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--amber); color: #000;
+    font-size: 8px; font-weight: 700;
+    width: 14px; height: 14px; border-radius: 50%;
+    margin-left: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .nav-tab .tab-badge.visible { opacity: 1; }
+
+  /* ── PAGES ── */
+  .page { display: none; flex: 1; overflow: hidden; }
+  .page.active { display: flex; }
+
+  /* ── MAIN LAYOUT ── */
   .main { display: flex; flex: 1; overflow: hidden; }
 
+  /* ── SIDEBAR ── */
   .sidebar {
     width: 220px;
     border-right: 1px solid var(--border);
@@ -98,10 +121,21 @@
     flex-shrink: 0;
     overflow: hidden;
   }
-
   .sidebar-section { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
-
   .sidebar-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+
+  .db-indicator {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 8px; margin-bottom: 8px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    font-family: var(--mono); font-size: 9px;
+    transition: all 0.3s;
+  }
+  .db-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+  .db-indicator.sakila .db-dot { background: var(--blue); }
+  .db-name-label { color: var(--text2); flex: 1; }
+  .db-tag { color: var(--text3); font-size: 8px; }
 
   .quick-btn {
     display: block; width: 100%;
@@ -110,15 +144,13 @@
     border: 1px solid var(--border);
     color: var(--text2);
     font-family: var(--sans); font-size: 11px;
-    cursor: pointer;
-    margin-bottom: 4px;
-    transition: all 0.15s;
-    line-height: 1.3;
+    cursor: pointer; margin-bottom: 4px;
+    transition: all 0.15s; line-height: 1.3;
   }
   .quick-btn:hover { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
+  .quick-btn.sakila-btn:hover { border-color: #1a5a99; color: var(--blue); background: rgba(59,158,255,0.08); }
 
   .sidebar-stats { padding: 14px 16px; flex: 1; overflow-y: auto; }
-
   .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
   .stat-label { font-size: 10px; color: var(--text3); font-family: var(--mono); }
   .stat-val { font-size: 10px; color: var(--amber); font-family: var(--mono); }
@@ -131,14 +163,13 @@
     color: var(--amber);
     font-family: var(--mono); font-size: 10px;
     letter-spacing: 0.08em; text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.15s;
+    cursor: pointer; transition: all 0.15s;
     width: calc(100% - 32px);
   }
   .new-chat-btn:hover { background: var(--amber-glow2); }
 
+  /* ── CHAT AREA ── */
   .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
   .messages { flex: 1; overflow-y: auto; padding: 20px 24px; scroll-behavior: smooth; }
   .messages::-webkit-scrollbar { width: 4px; }
   .messages::-webkit-scrollbar-track { background: transparent; }
@@ -147,25 +178,30 @@
   .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px; color: var(--text3); }
   .welcome-logo { font-family: var(--mono); font-size: 42px; font-weight: 300; color: var(--amber); opacity: 0.3; line-height: 1; margin-bottom: 16px; }
   .welcome h2 { font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
-  .welcome p { font-size: 12px; max-width: 360px; line-height: 1.6; }
+  .welcome p { font-size: 12px; max-width: 380px; line-height: 1.6; }
+  .welcome-dbs { display: flex; gap: 8px; margin-top: 16px; }
+  .welcome-db-pill {
+    padding: 4px 12px; border: 1px solid var(--border2);
+    font-family: var(--mono); font-size: 10px; color: var(--text2);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .welcome-db-pill.airlines { border-color: var(--amber-dim); color: var(--amber); }
+  .welcome-db-pill.sakila { border-color: #1a5a99; color: var(--blue); }
 
   .msg { margin-bottom: 20px; }
-
   .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-
   .msg-role { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; border: 1px solid; }
   .msg-role.user { color: var(--amber); border-color: var(--amber-dim); }
   .msg-role.agent { color: var(--text2); border-color: var(--border2); }
-
+  .msg-db-badge { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border: 1px solid; }
+  .msg-db-badge.airlines { color: var(--amber); border-color: var(--amber-dim); background: var(--amber-glow); }
+  .msg-db-badge.sakila { color: var(--blue); border-color: #1a5a99; background: rgba(59,158,255,0.08); }
   .msg-time { font-family: var(--mono); font-size: 9px; color: var(--text3); }
 
   .msg-body { padding: 12px 16px; border-left: 2px solid; font-size: 13px; line-height: 1.65; }
   .msg-body.user { border-color: var(--amber-dim); background: var(--amber-glow); color: var(--text); }
   .msg-body.agent { border-color: var(--border2); background: var(--bg3); color: var(--text); }
   .msg-body.error { border-color: var(--red); background: rgba(231,76,60,0.06); color: #e87060; }
-
-  .msg-body p { margin-bottom: 8px; }
-  .msg-body p:last-child { margin-bottom: 0; }
 
   .sql-block { margin: 10px 0; border: 1px solid var(--border2); overflow: hidden; }
   .sql-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); }
@@ -178,6 +214,15 @@
   .results-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); }
   .results-tag { font-family: var(--mono); font-size: 9px; color: var(--green); letter-spacing: 0.1em; }
   .results-count { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+  .pin-btn {
+    font-family: var(--mono); font-size: 9px;
+    padding: 2px 8px; border: 1px solid var(--amber-dim);
+    background: transparent; color: var(--amber);
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.06em;
+  }
+  .pin-btn:hover { background: var(--amber-glow2); }
+  .pin-btn.pinned { background: var(--amber); color: #000; border-color: var(--amber); cursor: default; }
+
   .table-scroll { overflow-x: auto; max-height: 260px; overflow-y: auto; }
   .table-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
   .table-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
@@ -193,32 +238,22 @@
   .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
   @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-4px); } }
 
+  /* ── INPUT AREA ── */
   .input-area { padding: 14px 24px 18px; border-top: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
   .input-row { display: flex; align-items: flex-end; gap: 10px; }
   .input-box { flex: 1; position: relative; }
-
   #query-input {
-    width: 100%;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    font-family: var(--sans); font-size: 13px;
-    padding: 10px 14px;
-    resize: none;
-    min-height: 42px;
-    max-height: 120px;
-    line-height: 1.5;
-    outline: none;
-    transition: border-color 0.15s;
-    overflow-y: auto;
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+    color: var(--text); font-family: var(--sans); font-size: 13px;
+    padding: 10px 14px; resize: none;
+    min-height: 42px; max-height: 120px; line-height: 1.5;
+    outline: none; transition: border-color 0.15s; overflow-y: auto;
   }
   #query-input::placeholder { color: var(--text3); }
   #query-input:focus { border-color: var(--amber-dim); }
-
   .send-btn { padding: 10px 18px; background: var(--amber); border: none; color: #000; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; transition: all 0.15s; white-space: nowrap; align-self: stretch; min-height: 42px; }
   .send-btn:hover { background: #f0b030; }
   .send-btn:disabled { background: var(--text3); cursor: not-allowed; }
-
   .input-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
   .endpoint-sel { display: flex; gap: 6px; }
   .ep-btn { padding: 3px 9px; border: 1px solid var(--border2); background: transparent; color: var(--text3); font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: all 0.12s; }
@@ -226,11 +261,86 @@
   .ep-btn:hover:not(.active) { border-color: var(--border2); color: var(--text2); }
   .input-hint { font-family: var(--mono); font-size: 9px; color: var(--text3); }
   kbd { display: inline-block; border: 1px solid var(--border2); padding: 1px 4px; font-family: var(--mono); font-size: 9px; color: var(--text3); margin: 0 1px; }
+
+  /* ── BI REPORT PAGE ── */
+  .report-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .report-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); flex-shrink: 0;
+  }
+  .report-toolbar-left { display: flex; align-items: center; gap: 12px; }
+  .report-title { font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .report-count { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+  .clear-report-btn {
+    padding: 5px 12px; border: 1px solid var(--red);
+    background: transparent; color: var(--red);
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .clear-report-btn:hover { background: rgba(231,76,60,0.1); }
+
+  .report-grid {
+    flex: 1; overflow-y: auto;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+    gap: 16px;
+    align-content: start;
+  }
+  .report-grid::-webkit-scrollbar { width: 4px; }
+  .report-grid::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .report-empty {
+    grid-column: 1 / -1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 80px 40px; text-align: center; color: var(--text3);
+  }
+  .report-empty-icon { font-family: var(--mono); font-size: 36px; opacity: 0.2; margin-bottom: 16px; }
+  .report-empty h3 { font-family: var(--mono); font-size: 12px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .report-empty p { font-size: 12px; max-width: 300px; line-height: 1.6; }
+
+  .report-card {
+    border: 1px solid var(--border2);
+    background: var(--bg2);
+    overflow: hidden;
+    animation: cardIn 0.25s ease;
+  }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .card-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .card-question { font-size: 12px; color: var(--text); line-height: 1.4; flex: 1; }
+  .card-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .card-db { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border: 1px solid; }
+  .card-db.airlines { color: var(--amber); border-color: var(--amber-dim); }
+  .card-db.sakila { color: var(--blue); border-color: #1a5a99; }
+  .card-time { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+  .remove-card-btn {
+    background: none; border: none; color: var(--text3);
+    cursor: pointer; font-size: 14px; padding: 0 2px;
+    transition: color 0.15s; line-height: 1; flex-shrink: 0;
+  }
+  .remove-card-btn:hover { color: var(--red); }
+
+  .card-sql { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--bg3); }
+  .card-sql-label { font-family: var(--mono); font-size: 8px; color: var(--amber); letter-spacing: 0.1em; margin-bottom: 4px; }
+  .card-sql-code { font-family: var(--mono); font-size: 10px; color: #7ecfb3; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; max-height: 80px; overflow-y: auto; }
+
+  .card-results { padding: 0; }
+  .card-results-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; border-bottom: 1px solid var(--border); }
+  .card-results-label { font-family: var(--mono); font-size: 9px; color: var(--green); letter-spacing: 0.1em; }
+  .card-rows-count { font-family: var(--mono); font-size: 9px; color: var(--text3); }
+  .card-table-scroll { overflow-x: auto; max-height: 220px; overflow-y: auto; }
+  .card-table-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
+  .card-table-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
 </style>
 </head>
 <body>
 
-<!-- Injected at deploy time by CI — never hardcoded in source -->
 <script>
   window.APP_CONFIG = {
     albUrl: "https://d1zs5dwel65lsn.cloudfront.net",
@@ -238,12 +348,13 @@
   };
 </script>
 
+<!-- HEADER -->
 <header class="header">
   <div class="header-left">
     <div class="logo-mark">AI</div>
     <div>
       <div class="header-title">SQL AI Agent</div>
-      <div class="header-sub">airlines_db // AWS RDS</div>
+      <div class="header-sub" id="header-db-label">multi-db // AWS RDS</div>
     </div>
   </div>
   <div class="header-right">
@@ -255,47 +366,107 @@
   </div>
 </header>
 
-<div class="main">
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Quick queries</div>
-      <button class="quick-btn" onclick="sendQuick('Show me the top 5 airlines by total flights')">Top airlines by flights</button>
-      <button class="quick-btn" onclick="sendQuick('What are the most delayed routes?')">Most delayed routes</button>
-      <button class="quick-btn" onclick="sendQuick('Show average fare by airline class')">Avg fare by class</button>
-      <button class="quick-btn" onclick="sendQuick('Which airports have the most cancellations?')">Airport cancellations</button>
-      <button class="quick-btn" onclick="sendQuick('Show me flight count by month this year')">Monthly flight volume</button>
-    </div>
-    <div class="sidebar-stats">
-      <div class="sidebar-label">Session info</div>
-      <div class="stat-row"><span class="stat-label">queries</span><span class="stat-val" id="query-count">0</span></div>
-      <div class="stat-row"><span class="stat-label">endpoint</span><span class="stat-val" id="ep-display">ask-and-run</span></div>
-      <div class="stat-row"><span class="stat-label">mode</span><span class="stat-val">claude-sonnet</span></div>
-      <div class="stat-row"><span class="stat-label">db</span><span class="stat-val">airlines_db</span></div>
-    </div>
-    <button class="new-chat-btn" onclick="newChat()">+ new session</button>
-  </aside>
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <button class="nav-tab active" id="tab-chat" onclick="switchPage('chat')">
+    ⬡ Chat
+  </button>
+  <button class="nav-tab" id="tab-report" onclick="switchPage('report')">
+    ◈ BI Report
+    <span class="tab-badge" id="report-badge">0</span>
+  </button>
+</nav>
 
-  <div class="chat-area">
-    <div class="messages" id="messages">
-      <div class="welcome" id="welcome">
-        <div class="welcome-logo">_</div>
-        <h2>SQL AI Agent — Phase 8</h2>
-        <p>Ask a question about the airlines database in plain English. The agent will generate SQL, run it, and explain the results.</p>
+<!-- CHAT PAGE -->
+<div class="page active" id="page-chat">
+  <div class="main">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Quick queries</div>
+
+        <!-- DB Indicator -->
+        <div class="db-indicator" id="db-indicator">
+          <div class="db-dot"></div>
+          <span class="db-name-label" id="db-name-label">airlines_db</span>
+          <span class="db-tag">AUTO</span>
+        </div>
+
+        <!-- Airlines quick queries -->
+        <div id="quick-airlines">
+          <button class="quick-btn" onclick="sendQuick('Show me the top 5 airlines by total flights')">Top airlines by flights</button>
+          <button class="quick-btn" onclick="sendQuick('What are the most delayed routes?')">Most delayed routes</button>
+          <button class="quick-btn" onclick="sendQuick('Show average fare by airline class')">Avg fare by class</button>
+          <button class="quick-btn" onclick="sendQuick('Which airports have the most cancellations?')">Airport cancellations</button>
+          <button class="quick-btn" onclick="sendQuick('Show me flight count by month this year')">Monthly flight volume</button>
+        </div>
+
+        <!-- Sakila quick queries (hidden by default) -->
+        <div id="quick-sakila" style="display:none;">
+          <button class="quick-btn sakila-btn" onclick="sendQuick('How many actors are in the database?')">Total actors</button>
+          <button class="quick-btn sakila-btn" onclick="sendQuick('Show top 10 actors by number of films')">Top actors by films</button>
+          <button class="quick-btn sakila-btn" onclick="sendQuick('What are the most rented film categories?')">Top film categories</button>
+          <button class="quick-btn sakila-btn" onclick="sendQuick('Show me the top 10 customers by total payments')">Top customers</button>
+          <button class="quick-btn sakila-btn" onclick="sendQuick('Which films have never been rented?')">Unreented films</button>
+        </div>
+      </div>
+
+      <div class="sidebar-stats">
+        <div class="sidebar-label">Session info</div>
+        <div class="stat-row"><span class="stat-label">queries</span><span class="stat-val" id="query-count">0</span></div>
+        <div class="stat-row"><span class="stat-label">endpoint</span><span class="stat-val" id="ep-display">ask-and-run</span></div>
+        <div class="stat-row"><span class="stat-label">mode</span><span class="stat-val">claude-sonnet</span></div>
+        <div class="stat-row"><span class="stat-label">db</span><span class="stat-val" id="stat-db">auto-detect</span></div>
+        <div class="stat-row"><span class="stat-label">pinned</span><span class="stat-val" id="stat-pinned">0</span></div>
+      </div>
+      <button class="new-chat-btn" onclick="newChat()">+ new session</button>
+    </aside>
+
+    <div class="chat-area">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <div class="welcome-logo">_</div>
+          <h2>SQL AI Agent — Phase 9</h2>
+          <p>Ask a question in plain English. The agent auto-detects which database to query, generates SQL, runs it, and explains the results.</p>
+          <div class="welcome-dbs">
+            <div class="welcome-db-pill airlines">✈ airlines_db</div>
+            <div class="welcome-db-pill sakila">🎬 sakila</div>
+          </div>
+        </div>
+      </div>
+      <div class="input-area">
+        <div class="input-row">
+          <div class="input-box">
+            <textarea id="query-input" placeholder="Ask about flights, actors, rentals, routes..." rows="1"></textarea>
+          </div>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">SEND</button>
+        </div>
+        <div class="input-meta">
+          <div class="endpoint-sel">
+            <button class="ep-btn active" id="ep-ask" onclick="setEndpoint('ask-and-run')">ask-and-run</button>
+            <button class="ep-btn" id="ep-stream" onclick="setEndpoint('ask-stream')">stream</button>
+          </div>
+          <div class="input-hint"><kbd>Enter</kbd> send &nbsp;<kbd>Shift+Enter</kbd> newline</div>
+        </div>
       </div>
     </div>
-    <div class="input-area">
-      <div class="input-row">
-        <div class="input-box">
-          <textarea id="query-input" placeholder="Ask about flights, routes, fares, delays..." rows="1"></textarea>
-        </div>
-        <button class="send-btn" id="send-btn" onclick="sendMessage()">SEND</button>
+  </div>
+</div>
+
+<!-- BI REPORT PAGE -->
+<div class="page" id="page-report">
+  <div class="report-page">
+    <div class="report-toolbar">
+      <div class="report-toolbar-left">
+        <span class="report-title">BI Report</span>
+        <span class="report-count" id="report-count">0 cards pinned</span>
       </div>
-      <div class="input-meta">
-        <div class="endpoint-sel">
-          <button class="ep-btn active" id="ep-ask" onclick="setEndpoint('ask-and-run')">ask-and-run</button>
-          <button class="ep-btn" id="ep-stream" onclick="setEndpoint('ask-stream')">stream</button>
-        </div>
-        <div class="input-hint"><kbd>Enter</kbd> send &nbsp;<kbd>Shift+Enter</kbd> newline</div>
+      <button class="clear-report-btn" onclick="clearReport()">✕ Clear all</button>
+    </div>
+    <div class="report-grid" id="report-grid">
+      <div class="report-empty" id="report-empty">
+        <div class="report-empty-icon">◈</div>
+        <h3>No pinned results yet</h3>
+        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result to add it here.</p>
       </div>
     </div>
   </div>
@@ -308,7 +479,41 @@
   let currentEndpoint = 'ask-and-run';
   let queryCount = 0;
   let isLoading = false;
+  let lastDetectedDb = 'airlines_db';
+  let pinnedCards = [];
 
+  // ── PAGE SWITCHING ──
+  function switchPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.getElementById('tab-' + page).classList.add('active');
+  }
+
+  // ── DB AUTO-DETECT UI UPDATE ──
+  function updateDbUI(dbName) {
+    if (!dbName) return;
+    lastDetectedDb = dbName;
+    const isSakila = dbName === 'sakila';
+
+    // Sidebar indicator
+    const ind = document.getElementById('db-indicator');
+    const label = document.getElementById('db-name-label');
+    ind.className = 'db-indicator' + (isSakila ? ' sakila' : '');
+    label.textContent = dbName;
+
+    // Quick query panels
+    document.getElementById('quick-airlines').style.display = isSakila ? 'none' : 'block';
+    document.getElementById('quick-sakila').style.display = isSakila ? 'block' : 'none';
+
+    // Stat row
+    document.getElementById('stat-db').textContent = dbName;
+
+    // Header sub
+    document.getElementById('header-db-label').textContent = dbName + ' // AWS RDS';
+  }
+
+  // ── ENDPOINT ──
   function setEndpoint(ep) {
     currentEndpoint = ep;
     document.getElementById('ep-ask').classList.toggle('active', ep === 'ask-and-run');
@@ -323,6 +528,10 @@
   function hideWelcome() {
     const w = document.getElementById('welcome');
     if (w) w.remove();
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function appendMessage(role, content, isHTML) {
@@ -371,12 +580,113 @@
     if (el) el.remove();
   }
 
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // ── PIN TO REPORT ──
+  function pinResult(cardData, btnEl) {
+    if (btnEl.classList.contains('pinned')) return;
+    btnEl.classList.add('pinned');
+    btnEl.textContent = '✓ PINNED';
+
+    pinnedCards.push(cardData);
+    updateReportBadge();
+    renderReportCard(cardData);
   }
 
-  function buildResultHTML(data) {
+  function updateReportBadge() {
+    const count = pinnedCards.length;
+    const badge = document.getElementById('report-badge');
+    badge.textContent = count;
+    badge.classList.toggle('visible', count > 0);
+    document.getElementById('report-count').textContent = count + ' card' + (count !== 1 ? 's' : '') + ' pinned';
+    document.getElementById('stat-pinned').textContent = count;
+  }
+
+  function renderReportCard(cardData) {
+    const empty = document.getElementById('report-empty');
+    if (empty) empty.remove();
+
+    const grid = document.getElementById('report-grid');
+    const card = document.createElement('div');
+    card.className = 'report-card';
+    card.dataset.cardId = cardData.id;
+
+    const dbClass = cardData.db === 'sakila' ? 'sakila' : 'airlines';
+
+    let tableHTML = '';
+    if (cardData.results && cardData.results.length > 0) {
+      const cols = Object.keys(cardData.results[0]);
+      const rows = cardData.results.slice(0, 100);
+      tableHTML = `
+        <div class="card-results">
+          <div class="card-results-header">
+            <span class="card-results-label">RESULTS</span>
+            <span class="card-rows-count">${cardData.results.length} row${cardData.results.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="card-table-scroll">
+            <table class="results-table">
+              <thead><tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+              <tbody>${rows.map(r => `<tr>${cols.map(c => `<td>${escHtml(r[c] == null ? 'NULL' : r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-question">${escHtml(cardData.question)}</div>
+        <div class="card-meta">
+          <span class="card-db ${dbClass}">${escHtml(cardData.db || 'unknown')}</span>
+          <span class="card-time">${cardData.time}</span>
+          <button class="remove-card-btn" onclick="removeCard('${cardData.id}', this)" title="Remove">×</button>
+        </div>
+      </div>
+      ${cardData.sql ? `
+      <div class="card-sql">
+        <div class="card-sql-label">SQL // GENERATED</div>
+        <div class="card-sql-code">${escHtml(cardData.sql)}</div>
+      </div>` : ''}
+      ${tableHTML}
+    `;
+    grid.appendChild(card);
+  }
+
+  function removeCard(cardId, btn) {
+    pinnedCards = pinnedCards.filter(c => c.id !== cardId);
+    btn.closest('.report-card').remove();
+    updateReportBadge();
+    if (pinnedCards.length === 0) {
+      const grid = document.getElementById('report-grid');
+      grid.innerHTML = `<div class="report-empty" id="report-empty">
+        <div class="report-empty-icon">◈</div>
+        <h3>No pinned results yet</h3>
+        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result to add it here.</p>
+      </div>`;
+    }
+  }
+
+  function clearReport() {
+    if (pinnedCards.length === 0) return;
+    if (!confirm('Clear all pinned cards?')) return;
+    pinnedCards = [];
+    updateReportBadge();
+    document.getElementById('report-grid').innerHTML = `<div class="report-empty" id="report-empty">
+      <div class="report-empty-icon">◈</div>
+      <h3>No pinned results yet</h3>
+      <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result to add it here.</p>
+    </div>`;
+  }
+
+  // ── BUILD RESULT HTML ──
+  function buildResultHTML(data, question) {
     let html = '';
+    const dbClass = data.db_name === 'sakila' ? 'sakila' : 'airlines';
+
+    // DB badge
+    if (data.db_name) {
+      html += `<div style="margin-bottom:8px;">
+        <span class="msg-db-badge ${dbClass}">${escHtml(data.db_name)}</span>
+      </div>`;
+    }
+
     if (data.sql || data.query) {
       const sql = data.sql || data.query;
       html += `<div class="sql-block">
@@ -394,10 +704,14 @@
     if (data.results && Array.isArray(data.results) && data.results.length > 0) {
       const cols = Object.keys(data.results[0]);
       const rows = data.results.slice(0, 50);
+      const cardId = 'card-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+      const cardData = { id: cardId, question, sql: data.sql, db: data.db_name, results: data.results, time: now() };
+
       html += `<div class="results-wrap">
         <div class="results-header">
           <span class="results-tag">RESULTS</span>
           <span class="results-count">${data.results.length} row${data.results.length !== 1 ? 's' : ''}</span>
+          <button class="pin-btn" id="${cardId}" onclick="pinResult(${escHtml(JSON.stringify(JSON.stringify(cardData)))}, this)">📌 Pin to Report</button>
         </div>
         <div class="table-scroll">
           <table class="results-table">
@@ -409,9 +723,31 @@
       if (data.results.length > 50) {
         html += `<p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;">... showing 50 of ${data.results.length} rows</p>`;
       }
+
+      // Store cardData for pin button to use
+      window._pendingCards = window._pendingCards || {};
+      window._pendingCards[cardId] = cardData;
     }
     if (!html) html = `<p>${escHtml(JSON.stringify(data, null, 2))}</p>`;
     return html;
+  }
+
+  // Override pinResult to use stored cardData
+  function pinResult(cardDataStrOrObj, btnEl) {
+    if (btnEl.classList.contains('pinned')) return;
+    let cardData;
+    if (typeof cardDataStrOrObj === 'string') {
+      cardData = JSON.parse(cardDataStrOrObj);
+    } else {
+      // fallback: look up by button id
+      cardData = window._pendingCards && window._pendingCards[btnEl.id];
+    }
+    if (!cardData) return;
+    btnEl.classList.add('pinned');
+    btnEl.textContent = '✓ PINNED';
+    pinnedCards.push(cardData);
+    updateReportBadge();
+    renderReportCard(cardData);
   }
 
   function copySQL(btn, sql) {
@@ -457,10 +793,7 @@
   async function askAndRun(question) {
     const res = await fetch(`${ALB}/ask-and-run`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
       body: JSON.stringify({ question, session_id: sessionId })
     });
     hideTyping();
@@ -471,16 +804,17 @@
       return;
     }
     const data = await res.json();
-    appendMessage('agent', buildResultHTML(data), true);
+
+    // Auto-detect DB and update UI
+    if (data.db_name) updateDbUI(data.db_name);
+
+    appendMessage('agent', buildResultHTML(data, question), true);
   }
 
   async function streamRequest(question) {
     const res = await fetch(`${ALB}/ask-stream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
       body: JSON.stringify({ question, session_id: sessionId })
     });
     hideTyping();
@@ -517,6 +851,7 @@
           if (raw === '[DONE]') break;
           try {
             const obj = JSON.parse(raw);
+            if (obj.db_name) updateDbUI(obj.db_name);
             if (obj.chunk) body.innerHTML += escHtml(obj.chunk);
             else if (obj.text) body.innerHTML += escHtml(obj.text);
             else if (typeof obj === 'string') body.innerHTML += escHtml(obj);
@@ -537,6 +872,7 @@
     queryCount = 0;
     document.getElementById('query-count').textContent = '0';
     document.getElementById('session-badge').textContent = 'session: ' + sessionId.slice(0, 12);
+    updateDbUI('airlines_db');
     const msgs = document.getElementById('messages');
     msgs.innerHTML = `<div class="welcome" id="welcome">
       <div class="welcome-logo">_</div>
@@ -554,7 +890,7 @@
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
 
-  // Health check on load
+  // Health check
   (async () => {
     try {
       const r = await fetch(`${ALB}/health`);
