@@ -326,10 +326,6 @@
   }
   .remove-card-btn:hover { color: var(--red); }
 
-  .card-sql { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--bg3); }
-  .card-sql-label { font-family: var(--mono); font-size: 8px; color: var(--amber); letter-spacing: 0.1em; margin-bottom: 4px; }
-  .card-sql-code { font-family: var(--mono); font-size: 10px; color: #7ecfb3; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; max-height: 80px; overflow-y: auto; }
-
   .card-results { padding: 0; }
   .card-results-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; border-bottom: 1px solid var(--border); }
   .card-results-label { font-family: var(--mono); font-size: 9px; color: var(--green); letter-spacing: 0.1em; }
@@ -337,6 +333,28 @@
   .card-table-scroll { overflow-x: auto; max-height: 220px; overflow-y: auto; }
   .card-table-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
   .card-table-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  /* ── BI REPORT PAGES ── */
+  .report-pages-nav {
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 24px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); flex-shrink: 0; flex-wrap: wrap;
+  }
+  .report-page-tab {
+    padding: 4px 14px; border: 1px solid var(--border2);
+    background: transparent; color: var(--text3);
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .report-page-tab:hover { color: var(--text2); border-color: var(--border2); }
+  .report-page-tab.active { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
+  .add-report-page-btn {
+    padding: 4px 10px; border: 1px dashed var(--border2);
+    background: transparent; color: var(--text3);
+    font-family: var(--mono); font-size: 9px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .add-report-page-btn:hover { color: var(--amber); border-color: var(--amber-dim); }
 </style>
 </head>
 <body>
@@ -460,7 +478,11 @@
         <span class="report-title">BI Report</span>
         <span class="report-count" id="report-count">0 cards pinned</span>
       </div>
-      <button class="clear-report-btn" onclick="clearReport()">✕ Clear all</button>
+      <button class="clear-report-btn" onclick="clearReport()">✕ Clear page</button>
+    </div>
+    <div class="report-pages-nav" id="report-pages-nav">
+      <button class="report-page-tab active" id="rptab-1" onclick="switchReportPage(1)">Page 1</button>
+      <button class="add-report-page-btn" onclick="addReportPage()">+ Add page</button>
     </div>
     <div class="report-grid" id="report-grid">
       <div class="report-empty" id="report-empty">
@@ -480,7 +502,11 @@
   let queryCount = 0;
   let isLoading = false;
   let lastDetectedDb = 'airlines_db';
-  let pinnedCards = [];
+
+  // ── MULTI-PAGE REPORT STATE ──
+  let reportPages = { 1: [] };
+  let currentReportPage = 1;
+  let totalReportPages = 1;
 
   // ── PAGE SWITCHING ──
   function switchPage(page) {
@@ -580,35 +606,86 @@
     if (el) el.remove();
   }
 
-  // ── PIN TO REPORT ──
-  function pinResult(cardData, btnEl) {
-    if (btnEl.classList.contains('pinned')) return;
-    btnEl.classList.add('pinned');
-    btnEl.textContent = '✓ PINNED';
+  // ── MULTI-PAGE REPORT ──
+  function addReportPage() {
+    totalReportPages++;
+    const pageNum = totalReportPages;
+    reportPages[pageNum] = [];
 
-    pinnedCards.push(cardData);
+    const nav = document.getElementById('report-pages-nav');
+    const addBtn = nav.querySelector('.add-report-page-btn');
+    const tab = document.createElement('button');
+    tab.className = 'report-page-tab';
+    tab.id = 'rptab-' + pageNum;
+    tab.textContent = 'Page ' + pageNum;
+    tab.onclick = () => switchReportPage(pageNum);
+    nav.insertBefore(tab, addBtn);
+    switchReportPage(pageNum);
+  }
+
+  function switchReportPage(pageNum) {
+    currentReportPage = pageNum;
+    document.querySelectorAll('.report-page-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById('rptab-' + pageNum);
+    if (tab) tab.classList.add('active');
+    renderCurrentPage();
     updateReportBadge();
-    renderReportCard(cardData);
+  }
+
+  function renderCurrentPage() {
+    const grid = document.getElementById('report-grid');
+    grid.innerHTML = '';
+    const cards = reportPages[currentReportPage] || [];
+    if (cards.length === 0) {
+      grid.innerHTML = `<div class="report-empty" id="report-empty">
+        <div class="report-empty-icon">◈</div>
+        <h3>No pinned results on this page</h3>
+        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result.</p>
+      </div>`;
+    } else {
+      cards.forEach(c => renderReportCard(c, false));
+    }
   }
 
   function updateReportBadge() {
-    const count = pinnedCards.length;
+    const total = Object.values(reportPages).reduce((s, arr) => s + arr.length, 0);
+    const pageCount = (reportPages[currentReportPage] || []).length;
     const badge = document.getElementById('report-badge');
-    badge.textContent = count;
-    badge.classList.toggle('visible', count > 0);
-    document.getElementById('report-count').textContent = count + ' card' + (count !== 1 ? 's' : '') + ' pinned';
-    document.getElementById('stat-pinned').textContent = count;
+    badge.textContent = total;
+    badge.classList.toggle('visible', total > 0);
+    document.getElementById('report-count').textContent =
+      pageCount + ' card' + (pageCount !== 1 ? 's' : '') + ' on this page · ' + total + ' total';
+    document.getElementById('stat-pinned').textContent = total;
   }
 
-  function renderReportCard(cardData) {
+  // ── PIN TO REPORT ──
+  function pinResult(cardDataStrOrObj, btnEl) {
+    if (btnEl.classList.contains('pinned')) return;
+    let cardData;
+    if (typeof cardDataStrOrObj === 'string') {
+      cardData = JSON.parse(cardDataStrOrObj);
+    } else {
+      cardData = window._pendingCards && window._pendingCards[btnEl.id];
+    }
+    if (!cardData) return;
+    btnEl.classList.add('pinned');
+    btnEl.textContent = '✓ PINNED';
+    btnEl.dataset.pinnedPage = currentReportPage;
+
+    if (!reportPages[currentReportPage]) reportPages[currentReportPage] = [];
+    reportPages[currentReportPage].push(cardData);
+    updateReportBadge();
+    renderReportCard(cardData, true);
+  }
+
+  function renderReportCard(cardData, animate) {
     const empty = document.getElementById('report-empty');
     if (empty) empty.remove();
 
     const grid = document.getElementById('report-grid');
     const card = document.createElement('div');
-    card.className = 'report-card';
+    card.className = 'report-card' + (animate ? '' : '');
     card.dataset.cardId = cardData.id;
-
     const dbClass = cardData.db === 'sakila' ? 'sakila' : 'airlines';
 
     let tableHTML = '';
@@ -630,6 +707,7 @@
         </div>`;
     }
 
+    // No SQL shown in BI report cards
     card.innerHTML = `
       <div class="card-header">
         <div class="card-question">${escHtml(cardData.question)}</div>
@@ -639,40 +717,47 @@
           <button class="remove-card-btn" onclick="removeCard('${cardData.id}', this)" title="Remove">×</button>
         </div>
       </div>
-      ${cardData.sql ? `
-      <div class="card-sql">
-        <div class="card-sql-label">SQL // GENERATED</div>
-        <div class="card-sql-code">${escHtml(cardData.sql)}</div>
-      </div>` : ''}
       ${tableHTML}
     `;
     grid.appendChild(card);
   }
 
   function removeCard(cardId, btn) {
-    pinnedCards = pinnedCards.filter(c => c.id !== cardId);
+    // Remove from state
+    reportPages[currentReportPage] = (reportPages[currentReportPage] || []).filter(c => c.id !== cardId);
     btn.closest('.report-card').remove();
     updateReportBadge();
-    if (pinnedCards.length === 0) {
-      const grid = document.getElementById('report-grid');
-      grid.innerHTML = `<div class="report-empty" id="report-empty">
+
+    // Re-enable the pin button in chat so user can re-pin
+    const pinBtn = document.getElementById(cardId);
+    if (pinBtn) {
+      pinBtn.classList.remove('pinned');
+      pinBtn.textContent = '📌 Pin to Report';
+    }
+
+    if ((reportPages[currentReportPage] || []).length === 0) {
+      document.getElementById('report-grid').innerHTML = `<div class="report-empty" id="report-empty">
         <div class="report-empty-icon">◈</div>
-        <h3>No pinned results yet</h3>
-        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result to add it here.</p>
+        <h3>No pinned results on this page</h3>
+        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result.</p>
       </div>`;
     }
   }
 
   function clearReport() {
-    if (pinnedCards.length === 0) return;
-    if (!confirm('Clear all pinned cards?')) return;
-    pinnedCards = [];
+    const count = (reportPages[currentReportPage] || []).length;
+    if (count === 0) return;
+    if (!confirm('Clear all cards on Page ' + currentReportPage + '?')) return;
+
+    // Re-enable pin buttons for cleared cards
+    (reportPages[currentReportPage] || []).forEach(card => {
+      const pinBtn = document.getElementById(card.id);
+      if (pinBtn) { pinBtn.classList.remove('pinned'); pinBtn.textContent = '📌 Pin to Report'; }
+    });
+
+    reportPages[currentReportPage] = [];
     updateReportBadge();
-    document.getElementById('report-grid').innerHTML = `<div class="report-empty" id="report-empty">
-      <div class="report-empty-icon">◈</div>
-      <h3>No pinned results yet</h3>
-      <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result to add it here.</p>
-    </div>`;
+    renderCurrentPage();
   }
 
   // ── BUILD RESULT HTML ──
@@ -724,30 +809,12 @@
         html += `<p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;">... showing 50 of ${data.results.length} rows</p>`;
       }
 
-      // Store cardData for pin button to use
+      // Store cardData for pin button lookup
       window._pendingCards = window._pendingCards || {};
       window._pendingCards[cardId] = cardData;
     }
     if (!html) html = `<p>${escHtml(JSON.stringify(data, null, 2))}</p>`;
     return html;
-  }
-
-  // Override pinResult to use stored cardData
-  function pinResult(cardDataStrOrObj, btnEl) {
-    if (btnEl.classList.contains('pinned')) return;
-    let cardData;
-    if (typeof cardDataStrOrObj === 'string') {
-      cardData = JSON.parse(cardDataStrOrObj);
-    } else {
-      // fallback: look up by button id
-      cardData = window._pendingCards && window._pendingCards[btnEl.id];
-    }
-    if (!cardData) return;
-    btnEl.classList.add('pinned');
-    btnEl.textContent = '✓ PINNED';
-    pinnedCards.push(cardData);
-    updateReportBadge();
-    renderReportCard(cardData);
   }
 
   function copySQL(btn, sql) {
@@ -889,6 +956,9 @@
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
+
+  // Init report page empty state
+  renderCurrentPage();
 
   // Health check
   (async () => {
