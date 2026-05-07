@@ -5,186 +5,75 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SQL AI Agent</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #0a0c0f;
-    --bg2: #111418;
-    --bg3: #181c22;
-    --border: #1e2530;
-    --border2: #2a3340;
-    --amber: #e8a020;
-    --amber-dim: #9a6510;
-    --amber-glow: rgba(232,160,32,0.08);
-    --amber-glow2: rgba(232,160,32,0.15);
-    --green: #2ecc71;
-    --blue: #3b9eff;
-    --red: #e74c3c;
-    --text: #c8d4e0;
-    --text2: #7a8fa0;
-    --text3: #3d5060;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Space Grotesk', sans-serif;
+    --bg: #0a0c0f; --bg2: #111418; --bg3: #181c22;
+    --border: #1e2530; --border2: #2a3340;
+    --amber: #e8a020; --amber-dim: #9a6510;
+    --amber-glow: rgba(232,160,32,0.08); --amber-glow2: rgba(232,160,32,0.15);
+    --green: #2ecc71; --blue: #3b9eff; --red: #e74c3c;
+    --text: #c8d4e0; --text2: #7a8fa0; --text3: #3d5060;
+    --mono: 'JetBrains Mono', monospace; --sans: 'Space Grotesk', sans-serif;
   }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
 
-  body {
-    font-family: var(--sans);
-    background: var(--bg);
-    color: var(--text);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    font-size: 14px;
-  }
-
-  /* ── HEADER ── */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    height: 52px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg2);
-    flex-shrink: 0;
-    gap: 12px;
-  }
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 52px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; gap: 12px; }
   .header-left { display: flex; align-items: center; gap: 12px; }
-  .logo-mark {
-    width: 28px; height: 28px;
-    border: 1.5px solid var(--amber);
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 11px;
-    color: var(--amber); font-weight: 600; letter-spacing: -0.5px; flex-shrink: 0;
-  }
+  .logo-mark { width: 28px; height: 28px; border: 1.5px solid var(--amber); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; color: var(--amber); font-weight: 600; flex-shrink: 0; }
   .header-title { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--amber); letter-spacing: 0.08em; text-transform: uppercase; }
   .header-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 0.06em; }
   .header-right { display: flex; align-items: center; gap: 16px; }
   .status-dot { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--text2); }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2.5s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
   .session-badge { font-family: var(--mono); font-size: 10px; color: var(--text3); border: 1px solid var(--border); padding: 3px 8px; }
 
-  /* ── NAV TABS ── */
-  .nav-tabs {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 0 20px;
-    flex-shrink: 0;
-  }
-  .nav-tab {
-    padding: 8px 18px;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text3);
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.15s;
-    margin-bottom: -1px;
-  }
+  /* NAV TABS */
+  .nav-tabs { display: flex; align-items: center; gap: 2px; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 20px; flex-shrink: 0; }
+  .nav-tab { padding: 8px 18px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; margin-bottom: -1px; }
   .nav-tab:hover { color: var(--text2); }
   .nav-tab.active { color: var(--amber); border-bottom-color: var(--amber); }
-  .nav-tab .tab-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    background: var(--amber); color: #000;
-    font-size: 8px; font-weight: 700;
-    width: 14px; height: 14px; border-radius: 50%;
-    margin-left: 6px;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
+  .nav-tab .tab-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--amber); color: #000; font-size: 8px; font-weight: 700; width: 14px; height: 14px; border-radius: 50%; margin-left: 6px; opacity: 0; transition: opacity 0.2s; }
   .nav-tab .tab-badge.visible { opacity: 1; }
 
-  /* ── PAGES ── */
+  /* PAGES */
   .page { display: none; flex: 1; overflow: hidden; }
   .page.active { display: flex; }
-
-  /* ── MAIN LAYOUT ── */
   .main { display: flex; flex: 1; overflow: hidden; }
 
-  /* ── SIDEBAR ── */
-  .sidebar {
-    width: 220px;
-    border-right: 1px solid var(--border);
-    background: var(--bg2);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
+  /* SIDEBAR */
+  .sidebar { width: 220px; border-right: 1px solid var(--border); background: var(--bg2); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
   .sidebar-section { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
   .sidebar-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
-
-  .db-indicator {
-    display: flex; align-items: center; gap: 6px;
-    padding: 5px 8px; margin-bottom: 8px;
-    border: 1px solid var(--border2);
-    background: var(--bg3);
-    font-family: var(--mono); font-size: 9px;
-    transition: all 0.3s;
-  }
+  .db-indicator { display: flex; align-items: center; gap: 6px; padding: 5px 8px; margin-bottom: 8px; border: 1px solid var(--border2); background: var(--bg3); font-family: var(--mono); font-size: 9px; transition: all 0.3s; }
   .db-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
   .db-indicator.sakila .db-dot { background: var(--blue); }
   .db-name-label { color: var(--text2); flex: 1; }
   .db-tag { color: var(--text3); font-size: 8px; }
-
-  .quick-btn {
-    display: block; width: 100%;
-    text-align: left; padding: 7px 10px;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text2);
-    font-family: var(--sans); font-size: 11px;
-    cursor: pointer; margin-bottom: 4px;
-    transition: all 0.15s; line-height: 1.3;
-  }
+  .quick-btn { display: block; width: 100%; text-align: left; padding: 7px 10px; background: transparent; border: 1px solid var(--border); color: var(--text2); font-family: var(--sans); font-size: 11px; cursor: pointer; margin-bottom: 4px; transition: all 0.15s; line-height: 1.3; }
   .quick-btn:hover { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
   .quick-btn.sakila-btn:hover { border-color: #1a5a99; color: var(--blue); background: rgba(59,158,255,0.08); }
-
   .sidebar-stats { padding: 14px 16px; flex: 1; overflow-y: auto; }
   .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
   .stat-label { font-size: 10px; color: var(--text3); font-family: var(--mono); }
   .stat-val { font-size: 10px; color: var(--amber); font-family: var(--mono); }
-
-  .new-chat-btn {
-    margin: 12px 16px;
-    padding: 8px 12px;
-    border: 1px solid var(--amber-dim);
-    background: transparent;
-    color: var(--amber);
-    font-family: var(--mono); font-size: 10px;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    cursor: pointer; transition: all 0.15s;
-    width: calc(100% - 32px);
-  }
+  .new-chat-btn { margin: 12px 16px; padding: 8px 12px; border: 1px solid var(--amber-dim); background: transparent; color: var(--amber); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; width: calc(100% - 32px); }
   .new-chat-btn:hover { background: var(--amber-glow2); }
 
-  /* ── CHAT AREA ── */
+  /* CHAT */
   .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .messages { flex: 1; overflow-y: auto; padding: 20px 24px; scroll-behavior: smooth; }
   .messages::-webkit-scrollbar { width: 4px; }
-  .messages::-webkit-scrollbar-track { background: transparent; }
   .messages::-webkit-scrollbar-thumb { background: var(--border2); }
-
   .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px; color: var(--text3); }
   .welcome-logo { font-family: var(--mono); font-size: 42px; font-weight: 300; color: var(--amber); opacity: 0.3; line-height: 1; margin-bottom: 16px; }
   .welcome h2 { font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
   .welcome p { font-size: 12px; max-width: 380px; line-height: 1.6; }
   .welcome-dbs { display: flex; gap: 8px; margin-top: 16px; }
-  .welcome-db-pill {
-    padding: 4px 12px; border: 1px solid var(--border2);
-    font-family: var(--mono); font-size: 10px; color: var(--text2);
-    display: flex; align-items: center; gap: 5px;
-  }
+  .welcome-db-pill { padding: 4px 12px; border: 1px solid var(--border2); font-family: var(--mono); font-size: 10px; color: var(--text2); display: flex; align-items: center; gap: 5px; }
   .welcome-db-pill.airlines { border-color: var(--amber-dim); color: var(--amber); }
   .welcome-db-pill.sakila { border-color: #1a5a99; color: var(--blue); }
 
@@ -197,12 +86,12 @@
   .msg-db-badge.airlines { color: var(--amber); border-color: var(--amber-dim); background: var(--amber-glow); }
   .msg-db-badge.sakila { color: var(--blue); border-color: #1a5a99; background: rgba(59,158,255,0.08); }
   .msg-time { font-family: var(--mono); font-size: 9px; color: var(--text3); }
-
   .msg-body { padding: 12px 16px; border-left: 2px solid; font-size: 13px; line-height: 1.65; }
   .msg-body.user { border-color: var(--amber-dim); background: var(--amber-glow); color: var(--text); }
   .msg-body.agent { border-color: var(--border2); background: var(--bg3); color: var(--text); }
   .msg-body.error { border-color: var(--red); background: rgba(231,76,60,0.06); color: #e87060; }
 
+  /* SQL BLOCK */
   .sql-block { margin: 10px 0; border: 1px solid var(--border2); overflow: hidden; }
   .sql-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); }
   .sql-tag { font-family: var(--mono); font-size: 9px; color: var(--amber); letter-spacing: 0.1em; }
@@ -210,20 +99,15 @@
   .copy-btn:hover { color: var(--amber); }
   .sql-code { font-family: var(--mono); font-size: 11px; padding: 10px 12px; color: #7ecfb3; white-space: pre-wrap; overflow-x: auto; line-height: 1.55; }
 
+  /* RESULTS TABLE */
   .results-wrap { margin: 10px 0; border: 1px solid var(--border2); overflow: hidden; }
   .results-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); }
   .results-tag { font-family: var(--mono); font-size: 9px; color: var(--green); letter-spacing: 0.1em; }
   .results-count { font-family: var(--mono); font-size: 9px; color: var(--text3); }
-  .pin-btn {
-    font-family: var(--mono); font-size: 9px;
-    padding: 2px 8px; border: 1px solid var(--amber-dim);
-    background: transparent; color: var(--amber);
-    cursor: pointer; transition: all 0.15s; letter-spacing: 0.06em;
-  }
+  .pin-btn { font-family: var(--mono); font-size: 9px; padding: 2px 8px; border: 1px solid var(--amber-dim); background: transparent; color: var(--amber); cursor: pointer; transition: all 0.15s; }
   .pin-btn:hover { background: var(--amber-glow2); }
   .pin-btn.pinned { background: var(--amber); color: #000; border-color: var(--amber); cursor: default; }
-
-  .table-scroll { overflow-x: auto; max-height: 260px; overflow-y: auto; }
+  .table-scroll { overflow-x: auto; max-height: 240px; overflow-y: auto; }
   .table-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
   .table-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
   table.results-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
@@ -232,23 +116,29 @@
   .results-table tr:last-child td { border-bottom: none; }
   .results-table tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
 
+  /* CHARTS */
+  .chart-wrap { margin: 10px 0; border: 1px solid var(--border2); overflow: hidden; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 6px; }
+  .chart-tag { font-family: var(--mono); font-size: 9px; color: var(--blue); letter-spacing: 0.1em; }
+  .chart-type-btns { display: flex; gap: 4px; }
+  .chart-type-btn { padding: 2px 8px; border: 1px solid var(--border2); background: transparent; color: var(--text3); font-family: var(--mono); font-size: 9px; cursor: pointer; transition: all 0.12s; }
+  .chart-type-btn:hover { color: var(--text2); }
+  .chart-type-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(59,158,255,0.08); }
+  .chart-canvas-wrap { padding: 12px; background: var(--bg3); height: 260px; }
+  .chart-canvas-wrap canvas { max-height: 236px; }
+
+  /* TYPING */
   .typing { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-left: 2px solid var(--border2); background: var(--bg3); color: var(--text3); font-family: var(--mono); font-size: 11px; margin-bottom: 20px; }
   .typing-dots span { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--amber); margin: 0 1px; animation: bounce 1.2s infinite; }
   .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
   .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
   @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-4px); } }
 
-  /* ── INPUT AREA ── */
+  /* INPUT */
   .input-area { padding: 14px 24px 18px; border-top: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
   .input-row { display: flex; align-items: flex-end; gap: 10px; }
-  .input-box { flex: 1; position: relative; }
-  #query-input {
-    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
-    color: var(--text); font-family: var(--sans); font-size: 13px;
-    padding: 10px 14px; resize: none;
-    min-height: 42px; max-height: 120px; line-height: 1.5;
-    outline: none; transition: border-color 0.15s; overflow-y: auto;
-  }
+  .input-box { flex: 1; }
+  #query-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-family: var(--sans); font-size: 13px; padding: 10px 14px; resize: none; min-height: 42px; max-height: 120px; line-height: 1.5; outline: none; transition: border-color 0.15s; overflow-y: auto; }
   #query-input::placeholder { color: var(--text3); }
   #query-input:focus { border-color: var(--amber-dim); }
   .send-btn { padding: 10px 18px; background: var(--amber); border: none; color: #000; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; transition: all 0.15s; white-space: nowrap; align-self: stretch; min-height: 42px; }
@@ -258,103 +148,54 @@
   .endpoint-sel { display: flex; gap: 6px; }
   .ep-btn { padding: 3px 9px; border: 1px solid var(--border2); background: transparent; color: var(--text3); font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: all 0.12s; }
   .ep-btn.active { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
-  .ep-btn:hover:not(.active) { border-color: var(--border2); color: var(--text2); }
   .input-hint { font-family: var(--mono); font-size: 9px; color: var(--text3); }
   kbd { display: inline-block; border: 1px solid var(--border2); padding: 1px 4px; font-family: var(--mono); font-size: 9px; color: var(--text3); margin: 0 1px; }
 
-  /* ── BI REPORT PAGE ── */
+  /* BI REPORT PAGE */
   .report-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .report-toolbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 24px; border-bottom: 1px solid var(--border);
-    background: var(--bg2); flex-shrink: 0;
-  }
+  .report-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
   .report-toolbar-left { display: flex; align-items: center; gap: 12px; }
   .report-title { font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; }
   .report-count { font-family: var(--mono); font-size: 10px; color: var(--text3); }
-  .clear-report-btn {
-    padding: 5px 12px; border: 1px solid var(--red);
-    background: transparent; color: var(--red);
-    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
-    cursor: pointer; transition: all 0.15s;
-  }
+  .clear-report-btn { padding: 5px 12px; border: 1px solid var(--red); background: transparent; color: var(--red); font-family: var(--mono); font-size: 9px; cursor: pointer; transition: all 0.15s; }
   .clear-report-btn:hover { background: rgba(231,76,60,0.1); }
-
-  .report-grid {
-    flex: 1; overflow-y: auto;
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
-    gap: 16px;
-    align-content: start;
-  }
+  .report-pages-nav { display: flex; align-items: center; gap: 4px; padding: 7px 24px; border-bottom: 1px solid var(--border); background: var(--bg3); flex-shrink: 0; flex-wrap: wrap; }
+  .report-page-tab { padding: 4px 14px; border: 1px solid var(--border2); background: transparent; color: var(--text3); font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s; }
+  .report-page-tab.active { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
+  .add-report-page-btn { padding: 4px 10px; border: 1px dashed var(--border2); background: transparent; color: var(--text3); font-family: var(--mono); font-size: 9px; cursor: pointer; transition: all 0.15s; }
+  .add-report-page-btn:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .report-grid { flex: 1; overflow-y: auto; padding: 16px 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 16px; align-content: start; }
   .report-grid::-webkit-scrollbar { width: 4px; }
   .report-grid::-webkit-scrollbar-thumb { background: var(--border2); }
-
-  .report-empty {
-    grid-column: 1 / -1;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 80px 40px; text-align: center; color: var(--text3);
-  }
+  .report-empty { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 40px; text-align: center; color: var(--text3); }
   .report-empty-icon { font-family: var(--mono); font-size: 36px; opacity: 0.2; margin-bottom: 16px; }
   .report-empty h3 { font-family: var(--mono); font-size: 12px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
   .report-empty p { font-size: 12px; max-width: 300px; line-height: 1.6; }
 
-  .report-card {
-    border: 1px solid var(--border2);
-    background: var(--bg2);
-    overflow: hidden;
-    animation: cardIn 0.25s ease;
-  }
-  @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-  .card-header {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    padding: 12px 14px; border-bottom: 1px solid var(--border);
-    gap: 10px;
-  }
+  /* BI CARDS */
+  .report-card { border: 1px solid var(--border2); background: var(--bg2); overflow: hidden; animation: cardIn 0.25s ease; }
+  @keyframes cardIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); gap: 10px; }
   .card-question { font-size: 12px; color: var(--text); line-height: 1.4; flex: 1; }
   .card-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .card-db { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border: 1px solid; }
   .card-db.airlines { color: var(--amber); border-color: var(--amber-dim); }
   .card-db.sakila { color: var(--blue); border-color: #1a5a99; }
   .card-time { font-family: var(--mono); font-size: 9px; color: var(--text3); }
-  .remove-card-btn {
-    background: none; border: none; color: var(--text3);
-    cursor: pointer; font-size: 14px; padding: 0 2px;
-    transition: color 0.15s; line-height: 1; flex-shrink: 0;
-  }
+  .remove-card-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; padding: 0 2px; transition: color 0.15s; line-height: 1; }
   .remove-card-btn:hover { color: var(--red); }
-
-  .card-results { padding: 0; }
-  .card-results-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; border-bottom: 1px solid var(--border); }
+  /* card chart */
+  .card-chart-controls { display: flex; align-items: center; gap: 4px; padding: 6px 14px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-wrap: wrap; }
+  .card-chart-label { font-family: var(--mono); font-size: 9px; color: var(--blue); letter-spacing: 0.1em; margin-right: 2px; }
+  .card-chart-canvas-wrap { padding: 10px 14px; background: var(--bg3); height: 220px; }
+  .card-chart-canvas-wrap canvas { max-height: 200px; }
+  /* card table */
+  .card-results-header { display: flex; align-items: center; justify-content: space-between; padding: 5px 14px; border-bottom: 1px solid var(--border); background: var(--bg2); }
   .card-results-label { font-family: var(--mono); font-size: 9px; color: var(--green); letter-spacing: 0.1em; }
   .card-rows-count { font-family: var(--mono); font-size: 9px; color: var(--text3); }
-  .card-table-scroll { overflow-x: auto; max-height: 220px; overflow-y: auto; }
+  .card-table-scroll { overflow-x: auto; max-height: 200px; overflow-y: auto; }
   .card-table-scroll::-webkit-scrollbar { width: 3px; height: 3px; }
   .card-table-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
-
-  /* ── BI REPORT PAGES ── */
-  .report-pages-nav {
-    display: flex; align-items: center; gap: 4px;
-    padding: 8px 24px; border-bottom: 1px solid var(--border);
-    background: var(--bg3); flex-shrink: 0; flex-wrap: wrap;
-  }
-  .report-page-tab {
-    padding: 4px 14px; border: 1px solid var(--border2);
-    background: transparent; color: var(--text3);
-    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .report-page-tab:hover { color: var(--text2); border-color: var(--border2); }
-  .report-page-tab.active { border-color: var(--amber-dim); color: var(--amber); background: var(--amber-glow); }
-  .add-report-page-btn {
-    padding: 4px 10px; border: 1px dashed var(--border2);
-    background: transparent; color: var(--text3);
-    font-family: var(--mono); font-size: 9px;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .add-report-page-btn:hover { color: var(--amber); border-color: var(--amber-dim); }
 </style>
 </head>
 <body>
@@ -376,22 +217,16 @@
     </div>
   </div>
   <div class="header-right">
-    <div class="status-dot">
-      <div class="dot"></div>
-      <span id="status-text">connecting...</span>
-    </div>
+    <div class="status-dot"><div class="dot"></div><span id="status-text">connecting...</span></div>
     <div class="session-badge" id="session-badge">session: default</div>
   </div>
 </header>
 
 <!-- NAV TABS -->
 <nav class="nav-tabs">
-  <button class="nav-tab active" id="tab-chat" onclick="switchPage('chat')">
-    ⬡ Chat
-  </button>
+  <button class="nav-tab active" id="tab-chat" onclick="switchPage('chat')">⬡ Chat</button>
   <button class="nav-tab" id="tab-report" onclick="switchPage('report')">
-    ◈ BI Report
-    <span class="tab-badge" id="report-badge">0</span>
+    ◈ BI Report <span class="tab-badge" id="report-badge">0</span>
   </button>
 </nav>
 
@@ -401,33 +236,26 @@
     <aside class="sidebar">
       <div class="sidebar-section">
         <div class="sidebar-label">Quick queries</div>
-
-        <!-- DB Indicator -->
         <div class="db-indicator" id="db-indicator">
           <div class="db-dot"></div>
           <span class="db-name-label" id="db-name-label">airlines_db</span>
           <span class="db-tag">AUTO</span>
         </div>
-
-        <!-- Airlines quick queries -->
         <div id="quick-airlines">
           <button class="quick-btn" onclick="sendQuick('Show me the top 5 airlines by total flights')">Top airlines by flights</button>
           <button class="quick-btn" onclick="sendQuick('What are the most delayed routes?')">Most delayed routes</button>
           <button class="quick-btn" onclick="sendQuick('Show average fare by airline class')">Avg fare by class</button>
           <button class="quick-btn" onclick="sendQuick('Which airports have the most cancellations?')">Airport cancellations</button>
-          <button class="quick-btn" onclick="sendQuick('Show me flight count by month this year')">Monthly flight volume</button>
+          <button class="quick-btn" onclick="sendQuick('Show me flight count by month')">Monthly flight volume</button>
         </div>
-
-        <!-- Sakila quick queries (hidden by default) -->
         <div id="quick-sakila" style="display:none;">
           <button class="quick-btn sakila-btn" onclick="sendQuick('How many actors are in the database?')">Total actors</button>
           <button class="quick-btn sakila-btn" onclick="sendQuick('Show top 10 actors by number of films')">Top actors by films</button>
           <button class="quick-btn sakila-btn" onclick="sendQuick('What are the most rented film categories?')">Top film categories</button>
-          <button class="quick-btn sakila-btn" onclick="sendQuick('Show me the top 10 customers by total payments')">Top customers</button>
-          <button class="quick-btn sakila-btn" onclick="sendQuick('Which films have never been rented?')">Unreented films</button>
+          <button class="quick-btn sakila-btn" onclick="sendQuick('Show top 10 customers by total payments')">Top customers</button>
+          <button class="quick-btn sakila-btn" onclick="sendQuick('Which films have never been rented?')">Unrented films</button>
         </div>
       </div>
-
       <div class="sidebar-stats">
         <div class="sidebar-label">Session info</div>
         <div class="stat-row"><span class="stat-label">queries</span><span class="stat-val" id="query-count">0</span></div>
@@ -444,7 +272,7 @@
         <div class="welcome" id="welcome">
           <div class="welcome-logo">_</div>
           <h2>SQL AI Agent — Phase 9</h2>
-          <p>Ask a question in plain English. The agent auto-detects which database to query, generates SQL, runs it, and explains the results.</p>
+          <p>Ask a question in plain English. Auto-detects which database to query, generates SQL, runs it, charts results, and explains findings.</p>
           <div class="welcome-dbs">
             <div class="welcome-db-pill airlines">✈ airlines_db</div>
             <div class="welcome-db-pill sakila">🎬 sakila</div>
@@ -484,13 +312,7 @@
       <button class="report-page-tab active" id="rptab-1" onclick="switchReportPage(1)">Page 1</button>
       <button class="add-report-page-btn" onclick="addReportPage()">+ Add page</button>
     </div>
-    <div class="report-grid" id="report-grid">
-      <div class="report-empty" id="report-empty">
-        <div class="report-empty-icon">◈</div>
-        <h3>No pinned results yet</h3>
-        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result to add it here.</p>
-      </div>
-    </div>
+    <div class="report-grid" id="report-grid"></div>
   </div>
 </div>
 
@@ -501,12 +323,21 @@
   let currentEndpoint = 'ask-and-run';
   let queryCount = 0;
   let isLoading = false;
-  let lastDetectedDb = 'airlines_db';
 
-  // ── MULTI-PAGE REPORT STATE ──
+  // ── REPORT STATE ──
   let reportPages = { 1: [] };
   let currentReportPage = 1;
   let totalReportPages = 1;
+
+  // ── CHART STATE ──
+  const _charts = {};
+  const _cardResults = {};
+  const COLORS = [
+    'rgba(232,160,32,0.85)','rgba(59,158,255,0.85)','rgba(46,204,113,0.85)',
+    'rgba(231,76,60,0.85)','rgba(155,89,182,0.85)','rgba(26,188,156,0.85)',
+    'rgba(243,156,18,0.85)','rgba(52,152,219,0.85)','rgba(230,126,34,0.85)',
+    'rgba(149,165,166,0.85)'
+  ];
 
   // ── PAGE SWITCHING ──
   function switchPage(page) {
@@ -516,30 +347,19 @@
     document.getElementById('tab-' + page).classList.add('active');
   }
 
-  // ── DB AUTO-DETECT UI UPDATE ──
+  // ── DB UI ──
   function updateDbUI(dbName) {
     if (!dbName) return;
-    lastDetectedDb = dbName;
     const isSakila = dbName === 'sakila';
-
-    // Sidebar indicator
     const ind = document.getElementById('db-indicator');
-    const label = document.getElementById('db-name-label');
     ind.className = 'db-indicator' + (isSakila ? ' sakila' : '');
-    label.textContent = dbName;
-
-    // Quick query panels
+    document.getElementById('db-name-label').textContent = dbName;
     document.getElementById('quick-airlines').style.display = isSakila ? 'none' : 'block';
     document.getElementById('quick-sakila').style.display = isSakila ? 'block' : 'none';
-
-    // Stat row
     document.getElementById('stat-db').textContent = dbName;
-
-    // Header sub
     document.getElementById('header-db-label').textContent = dbName + ' // AWS RDS';
   }
 
-  // ── ENDPOINT ──
   function setEndpoint(ep) {
     currentEndpoint = ep;
     document.getElementById('ep-ask').classList.toggle('active', ep === 'ask-and-run');
@@ -551,14 +371,11 @@
     return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
-  function hideWelcome() {
-    const w = document.getElementById('welcome');
-    if (w) w.remove();
-  }
-
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  function hideWelcome() { const w = document.getElementById('welcome'); if (w) w.remove(); }
 
   function appendMessage(role, content, isHTML) {
     const msgs = document.getElementById('messages');
@@ -569,24 +386,16 @@
         <span class="msg-role ${role}">${role === 'user' ? 'USER' : 'AGENT'}</span>
         <span class="msg-time">${now()}</span>
       </div>
-      <div class="msg-body ${role}">${isHTML ? content : escHtml(content)}</div>
-    `;
+      <div class="msg-body ${role}">${isHTML ? content : escHtml(content)}</div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
-    return div.querySelector('.msg-body');
   }
 
   function appendError(text) {
     const msgs = document.getElementById('messages');
     const div = document.createElement('div');
     div.className = 'msg';
-    div.innerHTML = `
-      <div class="msg-header">
-        <span class="msg-role agent">ERROR</span>
-        <span class="msg-time">${now()}</span>
-      </div>
-      <div class="msg-body error">${escHtml(text)}</div>
-    `;
+    div.innerHTML = `<div class="msg-header"><span class="msg-role agent">ERROR</span><span class="msg-time">${now()}</span></div><div class="msg-body error">${escHtml(text)}</div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
   }
@@ -594,16 +403,253 @@
   function showTyping() {
     const msgs = document.getElementById('messages');
     const div = document.createElement('div');
-    div.id = 'typing-indicator';
-    div.className = 'typing';
+    div.id = 'typing-indicator'; div.className = 'typing';
     div.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div><span>agent processing...</span>`;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+  }
+  function hideTyping() { const el = document.getElementById('typing-indicator'); if (el) el.remove(); }
+
+  // ── CHART UTILITIES ──
+  function detectChartType(results) {
+    if (!results || results.length === 0) return null;
+    const cols = Object.keys(results[0]);
+    if (cols.length < 2) return null;
+    const numCols = cols.filter(c => results.slice(0,5).every(r => r[c] !== null && !isNaN(Number(r[c]))));
+    if (numCols.length === 0) return null;
+    if (cols.length === numCols.length) return null; // all numeric, no label
+    const labelCol = cols.find(c => !numCols.includes(c));
+    if (!labelCol) return null;
+    if (/date|month|year|time|period|week|day/i.test(labelCol)) return 'line';
+    if (results.length <= 8 && numCols.length === 1) return 'pie';
+    return 'bar';
   }
 
-  function hideTyping() {
-    const el = document.getElementById('typing-indicator');
-    if (el) el.remove();
+  function getChartTypes(results) {
+    if (!results || results.length === 0) return [];
+    const cols = Object.keys(results[0]);
+    const numCols = cols.filter(c => results.slice(0,5).every(r => r[c] !== null && !isNaN(Number(r[c]))));
+    if (numCols.length === 0) return [];
+    const types = ['bar', 'line'];
+    if (numCols.length === 1) types.push('pie', 'doughnut');
+    return types;
+  }
+
+  function renderChart(canvasId, results, type) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !results || results.length === 0) return;
+    if (_charts[canvasId]) { _charts[canvasId].destroy(); delete _charts[canvasId]; }
+
+    const cols = Object.keys(results[0]);
+    const numCols = cols.filter(c => results.slice(0,5).every(r => r[c] !== null && !isNaN(Number(r[c]))));
+    const labelCol = cols.find(c => !numCols.includes(c)) || cols[0];
+    const labels = results.map(r => String(r[labelCol] ?? ''));
+
+    const datasets = numCols.map((col, i) => ({
+      label: col,
+      data: results.map(r => Number(r[col]) || 0),
+      backgroundColor: (type === 'line')
+        ? COLORS[i % COLORS.length].replace('0.85','0.2')
+        : results.map((_, j) => COLORS[j % COLORS.length]),
+      borderColor: (type === 'line')
+        ? COLORS[i % COLORS.length].replace('0.85','1')
+        : results.map((_, j) => COLORS[j % COLORS.length].replace('0.85','1')),
+      borderWidth: type === 'line' ? 2 : 1,
+      tension: 0.4, fill: type === 'line',
+      pointBackgroundColor: COLORS[i % COLORS.length],
+    }));
+
+    _charts[canvasId] = new Chart(canvas, {
+      type,
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#7a8fa0', font: { family: "'JetBrains Mono',monospace", size: 10 } } },
+          tooltip: { backgroundColor:'#111418', titleColor:'#e8a020', bodyColor:'#c8d4e0', borderColor:'#2a3340', borderWidth:1, titleFont:{family:"'JetBrains Mono',monospace",size:10}, bodyFont:{family:"'JetBrains Mono',monospace",size:10} }
+        },
+        scales: ['bar','line'].includes(type) ? {
+          x: { ticks:{color:'#3d5060',font:{family:"'JetBrains Mono',monospace",size:9},maxRotation:45}, grid:{color:'#1e2530'} },
+          y: { ticks:{color:'#3d5060',font:{family:"'JetBrains Mono',monospace",size:9}}, grid:{color:'#1e2530'} }
+        } : {}
+      }
+    });
+    _cardResults[canvasId] = results;
+  }
+
+  function switchChartType(chartId, newType, btn) {
+    const results = _cardResults[chartId];
+    if (!results) return;
+    // Update active button within same control group
+    const group = btn.closest('.chart-type-btns, .card-chart-controls');
+    if (group) group.querySelectorAll('.chart-type-btn').forEach(b => {
+      if (['bar','line','pie','doughnut'].includes(b.textContent)) b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    renderChart(chartId, results, newType);
+  }
+
+  // ── BUILD RESULT HTML (Chat) ──
+  function buildResultHTML(data, question) {
+    let html = '';
+    const dbClass = data.db_name === 'sakila' ? 'sakila' : 'airlines';
+
+    if (data.db_name) {
+      html += `<div style="margin-bottom:8px;"><span class="msg-db-badge ${dbClass}">${escHtml(data.db_name)}</span></div>`;
+    }
+    if (data.sql || data.query) {
+      const sql = data.sql || data.query;
+      html += `<div class="sql-block">
+        <div class="sql-header"><span class="sql-tag">SQL // GENERATED</span><button class="copy-btn" onclick="copySQL(this,\`${escHtml(sql)}\`)">copy</button></div>
+        <div class="sql-code">${escHtml(sql)}</div>
+      </div>`;
+    }
+    if (data.explanation || data.answer || data.response) {
+      const ans = data.explanation || data.answer || data.response;
+      html += `<p style="margin:10px 0 6px;color:var(--text);white-space:pre-wrap;line-height:1.7;">${escHtml(ans)}</p>`;
+    }
+    if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+      const cols = Object.keys(data.results[0]);
+      const rows = data.results.slice(0, 50);
+      const cardId = 'card-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+      const cardData = { id: cardId, question, sql: data.sql, db: data.db_name, results: data.results, time: now() };
+
+      // Table
+      html += `<div class="results-wrap">
+        <div class="results-header">
+          <span class="results-tag">RESULTS</span>
+          <span class="results-count">${data.results.length} row${data.results.length !== 1 ? 's' : ''}</span>
+          <button class="pin-btn" id="${cardId}" onclick="pinResult('${cardId}',this)">📌 Pin to Report</button>
+        </div>
+        <div class="table-scroll">
+          <table class="results-table">
+            <thead><tr>${cols.map(c=>`<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${escHtml(r[c]==null?'NULL':r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+      if (data.results.length > 50) html += `<p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;">... showing 50 of ${data.results.length} rows</p>`;
+
+      // Auto chart
+      const autoType = detectChartType(data.results);
+      const types = getChartTypes(data.results);
+      if (autoType && types.length > 0) {
+        const chartId = 'chart-' + cardId;
+        html += `<div class="chart-wrap">
+          <div class="chart-header">
+            <span class="chart-tag">CHART // AUTO-DETECTED</span>
+            <div class="chart-type-btns">${types.map(t=>`<button class="chart-type-btn${t===autoType?' active':''}" onclick="switchChartType('${chartId}','${t}',this)">${t}</button>`).join('')}</div>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="${chartId}"></canvas></div>
+        </div>`;
+        setTimeout(() => renderChart(chartId, data.results, autoType), 80);
+      }
+
+      window._pendingCards = window._pendingCards || {};
+      window._pendingCards[cardId] = cardData;
+    }
+    if (!html) html = `<p>${escHtml(JSON.stringify(data, null, 2))}</p>`;
+    return html;
+  }
+
+  function copySQL(btn, sql) {
+    navigator.clipboard.writeText(sql).then(() => { btn.textContent = 'copied!'; setTimeout(() => btn.textContent = 'copy', 1500); });
+  }
+
+  // ── PIN TO REPORT ──
+  function pinResult(cardId, btnEl) {
+    if (btnEl.classList.contains('pinned')) return;
+    const cardData = window._pendingCards && window._pendingCards[cardId];
+    if (!cardData) return;
+    btnEl.classList.add('pinned');
+    btnEl.textContent = '✓ PINNED';
+    btnEl.dataset.pinnedPage = currentReportPage;
+    if (!reportPages[currentReportPage]) reportPages[currentReportPage] = [];
+    reportPages[currentReportPage].push(cardData);
+    updateReportBadge();
+    if (document.getElementById('page-report').classList.contains('active')) {
+      renderReportCard(cardData);
+    }
+  }
+
+  // ── REPORT CARD RENDERING ──
+  function renderReportCard(cardData) {
+    const empty = document.getElementById('report-empty');
+    if (empty) empty.remove();
+    const grid = document.getElementById('report-grid');
+    const card = document.createElement('div');
+    card.className = 'report-card';
+    card.dataset.cardId = cardData.id;
+    const dbClass = cardData.db === 'sakila' ? 'sakila' : 'airlines';
+    const cardChartId = 'cardchart-' + cardData.id;
+
+    const autoType = detectChartType(cardData.results || []);
+    const types = getChartTypes(cardData.results || []);
+
+    const chartSection = (autoType && types.length > 0) ? `
+      <div class="card-chart-controls">
+        <span class="card-chart-label">CHART</span>
+        ${types.map(t=>`<button class="chart-type-btn${t===autoType?' active':''}" onclick="switchChartType('${cardChartId}','${t}',this)">${t}</button>`).join('')}
+        <button class="chart-type-btn" onclick="toggleCardTable('${cardData.id}',this)" style="margin-left:auto;border-color:var(--border2);">hide table</button>
+      </div>
+      <div class="card-chart-canvas-wrap"><canvas id="${cardChartId}"></canvas></div>` : '';
+
+    let tableHTML = '';
+    if (cardData.results && cardData.results.length > 0) {
+      const cols = Object.keys(cardData.results[0]);
+      const rows = cardData.results.slice(0, 100);
+      tableHTML = `
+        <div class="card-results-header">
+          <span class="card-results-label">RESULTS</span>
+          <span class="card-rows-count">${cardData.results.length} rows</span>
+        </div>
+        <div class="card-table-scroll">
+          <table class="results-table">
+            <thead><tr>${cols.map(c=>`<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${escHtml(r[c]==null?'NULL':r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-question">${escHtml(cardData.question)}</div>
+        <div class="card-meta">
+          <span class="card-db ${dbClass}">${escHtml(cardData.db||'unknown')}</span>
+          <span class="card-time">${cardData.time}</span>
+          <button class="remove-card-btn" onclick="removeCard('${cardData.id}',this)" title="Remove">×</button>
+        </div>
+      </div>
+      ${chartSection}
+      <div id="cardtable-${cardData.id}">${tableHTML}</div>`;
+    grid.appendChild(card);
+
+    if (autoType) setTimeout(() => renderChart(cardChartId, cardData.results, autoType), 80);
+  }
+
+  function toggleCardTable(cardId, btn) {
+    const tbl = document.getElementById('cardtable-' + cardId);
+    if (!tbl) return;
+    const hidden = tbl.style.display === 'none';
+    tbl.style.display = hidden ? '' : 'none';
+    btn.textContent = hidden ? 'hide table' : 'show table';
+  }
+
+  function removeCard(cardId, btn) {
+    reportPages[currentReportPage] = (reportPages[currentReportPage]||[]).filter(c=>c.id!==cardId);
+    btn.closest('.report-card').remove();
+    updateReportBadge();
+    // Re-enable pin button in chat
+    const pinBtn = document.getElementById(cardId);
+    if (pinBtn) { pinBtn.classList.remove('pinned'); pinBtn.textContent = '📌 Pin to Report'; }
+    if ((reportPages[currentReportPage]||[]).length === 0) showEmptyReport();
+  }
+
+  function showEmptyReport() {
+    document.getElementById('report-grid').innerHTML = `<div class="report-empty" id="report-empty">
+      <div class="report-empty-icon">◈</div>
+      <h3>No pinned results on this page</h3>
+      <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result.</p>
+    </div>`;
   }
 
   // ── MULTI-PAGE REPORT ──
@@ -611,7 +657,6 @@
     totalReportPages++;
     const pageNum = totalReportPages;
     reportPages[pageNum] = [];
-
     const nav = document.getElementById('report-pages-nav');
     const addBtn = nav.querySelector('.add-report-page-btn');
     const tab = document.createElement('button');
@@ -625,7 +670,7 @@
 
   function switchReportPage(pageNum) {
     currentReportPage = pageNum;
-    document.querySelectorAll('.report-page-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.report-page-tab').forEach(t=>t.classList.remove('active'));
     const tab = document.getElementById('rptab-' + pageNum);
     if (tab) tab.classList.add('active');
     renderCurrentPage();
@@ -636,222 +681,49 @@
     const grid = document.getElementById('report-grid');
     grid.innerHTML = '';
     const cards = reportPages[currentReportPage] || [];
-    if (cards.length === 0) {
-      grid.innerHTML = `<div class="report-empty" id="report-empty">
-        <div class="report-empty-icon">◈</div>
-        <h3>No pinned results on this page</h3>
-        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result.</p>
-      </div>`;
-    } else {
-      cards.forEach(c => renderReportCard(c, false));
-    }
+    if (cards.length === 0) { showEmptyReport(); } else { cards.forEach(c => renderReportCard(c)); }
   }
 
   function updateReportBadge() {
-    const total = Object.values(reportPages).reduce((s, arr) => s + arr.length, 0);
-    const pageCount = (reportPages[currentReportPage] || []).length;
+    const total = Object.values(reportPages).reduce((s,arr)=>s+arr.length,0);
+    const pageCount = (reportPages[currentReportPage]||[]).length;
     const badge = document.getElementById('report-badge');
     badge.textContent = total;
     badge.classList.toggle('visible', total > 0);
-    document.getElementById('report-count').textContent =
-      pageCount + ' card' + (pageCount !== 1 ? 's' : '') + ' on this page · ' + total + ' total';
+    document.getElementById('report-count').textContent = pageCount + ' card' + (pageCount!==1?'s':'') + ' on this page · ' + total + ' total';
     document.getElementById('stat-pinned').textContent = total;
   }
 
-  // ── PIN TO REPORT ──
-  function pinResult(cardDataStrOrObj, btnEl) {
-    if (btnEl.classList.contains('pinned')) return;
-    let cardData;
-    if (typeof cardDataStrOrObj === 'string') {
-      cardData = JSON.parse(cardDataStrOrObj);
-    } else {
-      cardData = window._pendingCards && window._pendingCards[btnEl.id];
-    }
-    if (!cardData) return;
-    btnEl.classList.add('pinned');
-    btnEl.textContent = '✓ PINNED';
-    btnEl.dataset.pinnedPage = currentReportPage;
-
-    if (!reportPages[currentReportPage]) reportPages[currentReportPage] = [];
-    reportPages[currentReportPage].push(cardData);
-    updateReportBadge();
-    renderReportCard(cardData, true);
-  }
-
-  function renderReportCard(cardData, animate) {
-    const empty = document.getElementById('report-empty');
-    if (empty) empty.remove();
-
-    const grid = document.getElementById('report-grid');
-    const card = document.createElement('div');
-    card.className = 'report-card' + (animate ? '' : '');
-    card.dataset.cardId = cardData.id;
-    const dbClass = cardData.db === 'sakila' ? 'sakila' : 'airlines';
-
-    let tableHTML = '';
-    if (cardData.results && cardData.results.length > 0) {
-      const cols = Object.keys(cardData.results[0]);
-      const rows = cardData.results.slice(0, 100);
-      tableHTML = `
-        <div class="card-results">
-          <div class="card-results-header">
-            <span class="card-results-label">RESULTS</span>
-            <span class="card-rows-count">${cardData.results.length} row${cardData.results.length !== 1 ? 's' : ''}</span>
-          </div>
-          <div class="card-table-scroll">
-            <table class="results-table">
-              <thead><tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
-              <tbody>${rows.map(r => `<tr>${cols.map(c => `<td>${escHtml(r[c] == null ? 'NULL' : r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
-            </table>
-          </div>
-        </div>`;
-    }
-
-    // No SQL shown in BI report cards
-    card.innerHTML = `
-      <div class="card-header">
-        <div class="card-question">${escHtml(cardData.question)}</div>
-        <div class="card-meta">
-          <span class="card-db ${dbClass}">${escHtml(cardData.db || 'unknown')}</span>
-          <span class="card-time">${cardData.time}</span>
-          <button class="remove-card-btn" onclick="removeCard('${cardData.id}', this)" title="Remove">×</button>
-        </div>
-      </div>
-      ${tableHTML}
-    `;
-    grid.appendChild(card);
-  }
-
-  function removeCard(cardId, btn) {
-    // Remove from state
-    reportPages[currentReportPage] = (reportPages[currentReportPage] || []).filter(c => c.id !== cardId);
-    btn.closest('.report-card').remove();
-    updateReportBadge();
-
-    // Re-enable the pin button in chat so user can re-pin
-    const pinBtn = document.getElementById(cardId);
-    if (pinBtn) {
-      pinBtn.classList.remove('pinned');
-      pinBtn.textContent = '📌 Pin to Report';
-    }
-
-    if ((reportPages[currentReportPage] || []).length === 0) {
-      document.getElementById('report-grid').innerHTML = `<div class="report-empty" id="report-empty">
-        <div class="report-empty-icon">◈</div>
-        <h3>No pinned results on this page</h3>
-        <p>Go to Chat, run a query, and click <strong style="color:var(--amber)">📌 Pin to Report</strong> on any result.</p>
-      </div>`;
-    }
-  }
-
   function clearReport() {
-    const count = (reportPages[currentReportPage] || []).length;
-    if (count === 0) return;
+    const cards = reportPages[currentReportPage] || [];
+    if (cards.length === 0) return;
     if (!confirm('Clear all cards on Page ' + currentReportPage + '?')) return;
-
-    // Re-enable pin buttons for cleared cards
-    (reportPages[currentReportPage] || []).forEach(card => {
+    cards.forEach(card => {
       const pinBtn = document.getElementById(card.id);
       if (pinBtn) { pinBtn.classList.remove('pinned'); pinBtn.textContent = '📌 Pin to Report'; }
     });
-
     reportPages[currentReportPage] = [];
     updateReportBadge();
-    renderCurrentPage();
+    showEmptyReport();
   }
 
-  // ── BUILD RESULT HTML ──
-  function buildResultHTML(data, question) {
-    let html = '';
-    const dbClass = data.db_name === 'sakila' ? 'sakila' : 'airlines';
-
-    // DB badge
-    if (data.db_name) {
-      html += `<div style="margin-bottom:8px;">
-        <span class="msg-db-badge ${dbClass}">${escHtml(data.db_name)}</span>
-      </div>`;
-    }
-
-    if (data.sql || data.query) {
-      const sql = data.sql || data.query;
-      html += `<div class="sql-block">
-        <div class="sql-header">
-          <span class="sql-tag">SQL // GENERATED</span>
-          <button class="copy-btn" onclick="copySQL(this, \`${escHtml(sql)}\`)">copy</button>
-        </div>
-        <div class="sql-code">${escHtml(sql)}</div>
-      </div>`;
-    }
-    if (data.explanation || data.answer || data.response) {
-      const ans = data.explanation || data.answer || data.response;
-      html += `<p style="margin: 10px 0 6px; color: var(--text); white-space: pre-wrap; line-height: 1.7;">${escHtml(ans)}</p>`;
-    }
-    if (data.results && Array.isArray(data.results) && data.results.length > 0) {
-      const cols = Object.keys(data.results[0]);
-      const rows = data.results.slice(0, 50);
-      const cardId = 'card-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
-      const cardData = { id: cardId, question, sql: data.sql, db: data.db_name, results: data.results, time: now() };
-
-      html += `<div class="results-wrap">
-        <div class="results-header">
-          <span class="results-tag">RESULTS</span>
-          <span class="results-count">${data.results.length} row${data.results.length !== 1 ? 's' : ''}</span>
-          <button class="pin-btn" id="${cardId}" onclick="pinResult(${escHtml(JSON.stringify(JSON.stringify(cardData)))}, this)">📌 Pin to Report</button>
-        </div>
-        <div class="table-scroll">
-          <table class="results-table">
-            <thead><tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
-            <tbody>${rows.map(r => `<tr>${cols.map(c => `<td>${escHtml(r[c] == null ? 'NULL' : r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
-          </table>
-        </div>
-      </div>`;
-      if (data.results.length > 50) {
-        html += `<p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;">... showing 50 of ${data.results.length} rows</p>`;
-      }
-
-      // Store cardData for pin button lookup
-      window._pendingCards = window._pendingCards || {};
-      window._pendingCards[cardId] = cardData;
-    }
-    if (!html) html = `<p>${escHtml(JSON.stringify(data, null, 2))}</p>`;
-    return html;
-  }
-
-  function copySQL(btn, sql) {
-    navigator.clipboard.writeText(sql).then(() => {
-      btn.textContent = 'copied!';
-      setTimeout(() => btn.textContent = 'copy', 1500);
-    });
-  }
-
+  // ── SEND MESSAGE ──
   async function sendMessage() {
     if (isLoading) return;
     const input = document.getElementById('query-input');
     const question = input.value.trim();
     if (!question) return;
-
-    hideWelcome();
-    isLoading = true;
+    hideWelcome(); isLoading = true;
     document.getElementById('send-btn').disabled = true;
-    input.value = '';
-    input.style.height = 'auto';
-
+    input.value = ''; input.style.height = 'auto';
     appendMessage('user', question, false);
     queryCount++;
     document.getElementById('query-count').textContent = queryCount;
     showTyping();
-
     try {
-      if (currentEndpoint === 'ask-stream') {
-        await streamRequest(question);
-      } else {
-        await askAndRun(question);
-      }
-    } catch (err) {
-      hideTyping();
-      appendError('Network error: ' + err.message);
-    }
-
+      if (currentEndpoint === 'ask-stream') await streamRequest(question);
+      else await askAndRun(question);
+    } catch (err) { hideTyping(); appendError('Network error: ' + err.message); }
     isLoading = false;
     document.getElementById('send-btn').disabled = false;
     input.focus();
@@ -866,15 +738,11 @@
     hideTyping();
     if (!res.ok) {
       let errText = `HTTP ${res.status}`;
-      try { const e = await res.json(); errText += ': ' + (e.detail || JSON.stringify(e)); } catch {}
-      appendError(errText);
-      return;
+      try { const e = await res.json(); errText += ': ' + (e.detail||JSON.stringify(e)); } catch {}
+      appendError(errText); return;
     }
     const data = await res.json();
-
-    // Auto-detect DB and update UI
     if (data.db_name) updateDbUI(data.db_name);
-
     appendMessage('agent', buildResultHTML(data, question), true);
   }
 
@@ -887,20 +755,13 @@
     hideTyping();
     if (!res.ok) {
       let errText = `HTTP ${res.status}`;
-      try { const e = await res.json(); errText += ': ' + (e.detail || JSON.stringify(e)); } catch {}
-      appendError(errText);
-      return;
+      try { const e = await res.json(); errText += ': ' + (e.detail||JSON.stringify(e)); } catch {}
+      appendError(errText); return;
     }
     const msgs = document.getElementById('messages');
     const div = document.createElement('div');
     div.className = 'msg';
-    div.innerHTML = `
-      <div class="msg-header">
-        <span class="msg-role agent">AGENT</span>
-        <span class="msg-time">${now()}</span>
-      </div>
-      <div class="msg-body agent" id="stream-body"></div>
-    `;
+    div.innerHTML = `<div class="msg-header"><span class="msg-role agent">AGENT</span><span class="msg-time">${now()}</span></div><div class="msg-body agent" id="stream-body"></div>`;
     msgs.appendChild(div);
     const body = document.getElementById('stream-body');
     const reader = res.body.getReader();
@@ -910,8 +771,7 @@
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
+      const lines = buffer.split('\n'); buffer = lines.pop();
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const raw = line.slice(6).trim();
@@ -929,48 +789,37 @@
     }
   }
 
-  function sendQuick(q) {
-    document.getElementById('query-input').value = q;
-    sendMessage();
-  }
+  function sendQuick(q) { document.getElementById('query-input').value = q; sendMessage(); }
 
   function newChat() {
-    sessionId = 'session-' + Math.random().toString(36).slice(2, 8);
+    sessionId = 'session-' + Math.random().toString(36).slice(2,8);
     queryCount = 0;
     document.getElementById('query-count').textContent = '0';
-    document.getElementById('session-badge').textContent = 'session: ' + sessionId.slice(0, 12);
+    document.getElementById('session-badge').textContent = 'session: ' + sessionId.slice(0,12);
     updateDbUI('airlines_db');
-    const msgs = document.getElementById('messages');
-    msgs.innerHTML = `<div class="welcome" id="welcome">
-      <div class="welcome-logo">_</div>
-      <h2>New session started</h2>
-      <p>Session ID: ${sessionId}</p>
-    </div>`;
+    document.getElementById('messages').innerHTML = `<div class="welcome" id="welcome"><div class="welcome-logo">_</div><h2>New session started</h2><p>Session ID: ${sessionId}</p></div>`;
   }
 
   document.getElementById('query-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
-
   document.getElementById('query-input').addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
 
-  // Init report page empty state
-  renderCurrentPage();
+  // Init
+  showEmptyReport();
 
   // Health check
   (async () => {
     try {
       const r = await fetch(`${ALB}/health`);
-      if (!r.ok) throw new Error('non-200');
+      if (!r.ok) throw new Error();
       document.getElementById('status-text').textContent = 'connected';
     } catch {
       document.getElementById('status-text').textContent = 'unreachable';
-      document.querySelector('.dot').style.background = 'var(--red)';
-      document.querySelector('.dot').style.boxShadow = '0 0 6px var(--red)';
-      document.querySelector('.dot').style.animation = 'none';
+      document.querySelector('.dot').style.cssText = 'background:var(--red);box-shadow:0 0 6px var(--red);animation:none;';
     }
   })();
 </script>
