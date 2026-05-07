@@ -170,12 +170,33 @@ jobs:
             --output text
       - name: Wait for deployment
         run: |
-          echo "Waiting for ECS service to stabilize (including ALB health checks)..."
-          aws ecs wait services-stable \
+          echo "Waiting for ECS service to stabilize (up to 30 min)..."
+          for i in $(seq 1 60); do
+            STATUS=$(aws ecs describe-services \
+              --cluster sql-ai-agent-cluster \
+              --services sql-ai-agent-service \
+              --region us-east-1 \
+              --query 'services[0].{deps:length(deployments),run:runningCount,des:desiredCount}' \
+              --output json)
+            DEPS=$(echo "$STATUS" | jq -r '.deps')
+            RUNNING=$(echo "$STATUS" | jq -r '.run')
+            DESIRED=$(echo "$STATUS" | jq -r '.des')
+            echo "Attempt $i/60: deployments=$DEPS running=$RUNNING desired=$DESIRED"
+            if [ "$DEPS" = "1" ] && [ "$RUNNING" = "$DESIRED" ] && [ "$DESIRED" != "0" ]; then
+              echo "Service is stable"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "=== ECS service events (last 5) ==="
+          aws ecs describe-services \
             --cluster sql-ai-agent-cluster \
             --services sql-ai-agent-service \
-            --region us-east-1
-          echo "Service is stable"
+            --region us-east-1 \
+            --query 'services[0].events[:5]' \
+            --output table
+          echo "Service did not stabilize in 30 minutes"
+          exit 1
       - name: Verify deployment
         run: |
           aws ecs describe-services             --cluster sql-ai-agent-cluster             --services sql-ai-agent-service             --query "services[0].{Running:runningCount,Desired:desiredCount}"             --output table             --region us-east-1

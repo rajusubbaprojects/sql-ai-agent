@@ -33,6 +33,7 @@ def get_connection(db_name: str = None):
             database=database,
             user=settings.db_user,
             password=settings.db_password,
+            connect_timeout=3,
         )
         return connection
     except Error as e:
