@@ -171,6 +171,7 @@ def ask_agent(
         return {
             "success": True,
             "answer": answer,
+            "explanation": _extract_explanation(answer),
             "sql": sql,
             "db_name": db_name,
             "history": updated_history,
@@ -235,6 +236,30 @@ def _extract_sql(text: str) -> str | None:
     if match:
         return match.group(1).strip()
     return None
+
+
+def _extract_explanation(text: str) -> str:
+    """Extract the plain-English explanation from Claude's response.
+
+    Strips the SQL code block so the UI can display only the narrative text.
+    Looks for an explicit EXPLANATION: label first; falls back to removing
+    the fenced SQL block and returning whatever prose remains.
+
+    Args:
+        text: Full raw text from Claude's response.
+
+    Returns:
+        Explanation string, or the original text if no SQL block was found.
+    """
+    # Try the labelled EXPLANATION: section first
+    match = re.search(
+        r"EXPLANATION:\s*(.+?)(?:\n\s*ASSUMPTIONS:|\Z)", text, re.DOTALL | re.IGNORECASE
+    )
+    if match:
+        return match.group(1).strip()
+    # Fall back: strip the fenced SQL block and return the prose
+    cleaned = re.sub(r"```sql.*?```", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+    return cleaned if cleaned else text.strip()
 
 
 def reset_conversation(session_id: str = "default") -> dict:

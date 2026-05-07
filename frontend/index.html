@@ -389,7 +389,7 @@
     }
     if (data.explanation || data.answer || data.response) {
       const ans = data.explanation || data.answer || data.response;
-      html += `<p style="margin: 10px 0 6px; color: var(--text);">${escHtml(ans)}</p>`;
+      html += `<p style="margin: 10px 0 6px; color: var(--text); white-space: pre-wrap; line-height: 1.7;">${escHtml(ans)}</p>`;
     }
     if (data.results && Array.isArray(data.results) && data.results.length > 0) {
       const cols = Object.keys(data.results[0]);

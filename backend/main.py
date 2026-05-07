@@ -185,6 +185,7 @@ def ask_and_run(request: QuestionRequest):
         "success": True,
         "question": request.question,
         "answer": result["answer"],
+        "explanation": result.get("explanation", ""),
         "sql": sql,
         "db_name": db_name,
         "results": (
