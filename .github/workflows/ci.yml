@@ -170,36 +170,31 @@ jobs:
             --output text
       - name: Wait for deployment
         run: |
-          echo "Waiting for ECS service to stabilize..."
-          for i in $(seq 1 24); do
-            RUNNING=$(aws ecs describe-services \
-              --cluster sql-ai-agent-cluster \
-              --services sql-ai-agent-service \
-              --region us-east-1 \
-              --query 'services[0].runningCount' \
-              --output text)
-            DESIRED=$(aws ecs describe-services \
-              --cluster sql-ai-agent-cluster \
-              --services sql-ai-agent-service \
-              --region us-east-1 \
-              --query 'services[0].desiredCount' \
-              --output text)
-            echo "Attempt $i: running=$RUNNING desired=$DESIRED"
-            if [ "$RUNNING" = "$DESIRED" ] && [ "$DESIRED" != "0" ]; then
-              echo "Service is stable"
-              exit 0
-            fi
-            sleep 30
-          done
-          echo "Service did not stabilize in time"
-          exit 1
+          echo "Waiting for ECS service to stabilize (including ALB health checks)..."
+          aws ecs wait services-stable \
+            --cluster sql-ai-agent-cluster \
+            --services sql-ai-agent-service \
+            --region us-east-1
+          echo "Service is stable"
       - name: Verify deployment
         run: |
           aws ecs describe-services             --cluster sql-ai-agent-cluster             --services sql-ai-agent-service             --query "services[0].{Running:runningCount,Desired:desiredCount}"             --output table             --region us-east-1
       - name: Smoke test via ALB
         run: |
-         sleep 30
-         curl -f http://${{ secrets.ALB_DNS }}/health
+          sleep 30
+          echo "Running smoke test against ALB..."
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+              http://${{ secrets.ALB_DNS }}/health)
+            echo "Attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Health check failed after 3 minutes"
+          exit 1
 
   deploy-frontend:
     name: Deploy frontend to S3 + CloudFront
