@@ -1,5 +1,4 @@
-# backend/config/__init__.py
-# App settings loaded from .env
+"""Backend package — application settings loaded from the .env file."""
 
 from functools import lru_cache
 
@@ -7,17 +6,27 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Database
+    """Typed application settings read from environment variables / .env.
+
+    Attributes:
+        db_host: MySQL host address.
+        db_port: MySQL port number.
+        db_user: MySQL user name.
+        db_password: MySQL password.
+        db_name: Default database name.
+        anthropic_api_key: API key for the Anthropic Claude service.
+        app_env: Deployment environment ("development", "production", etc.).
+        app_debug: Enable verbose logging and auto-reload.
+    """
+
     db_host: str = "localhost"
     db_port: int = 3306
     db_user: str = "root"
     db_password: str = ""
     db_name: str = "airlines_db"
 
-    # Anthropic
     anthropic_api_key: str = ""
 
-    # App
     app_env: str = "development"
     app_debug: bool = True
 
@@ -26,4 +35,9 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
+    """Return the cached application settings singleton.
+
+    Returns:
+        Settings instance populated from environment variables and .env.
+    """
     return Settings()

@@ -1,1 +1,1 @@
-# CLI tool — terminal interface that calls the deployed API
+"""Command-line interface for the SQL AI Agent — wraps the deployed API."""

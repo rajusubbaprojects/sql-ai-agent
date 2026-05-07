@@ -1,5 +1,7 @@
-# Phase 1 End-to-End Test Suite
-# Run: python3 test_phase1.py
+"""Phase 1 end-to-end test script — validates config, DB, schema, rules, agent, and API.
+
+Run: python3 test_phase1.py
+"""
 
 import sys
 
@@ -11,6 +13,13 @@ failed = 0
 
 
 def test(name: str, condition: bool, detail: str = ""):
+    """Print a PASS or FAIL result and update global counters.
+
+    Args:
+        name: Human-readable test name.
+        condition: True for pass, False for fail.
+        detail: Optional extra context appended to FAIL lines.
+    """
     global passed, failed
     if condition:
         print(f"  ✅ PASS — {name}")
@@ -21,6 +30,11 @@ def test(name: str, condition: bool, detail: str = ""):
 
 
 def section(title: str):
+    """Print a visually distinct section header.
+
+    Args:
+        title: Section title to display.
+    """
     print(f"\n{'─' * 50}")
     print(f"  {title}")
     print(f"{'─' * 50}")

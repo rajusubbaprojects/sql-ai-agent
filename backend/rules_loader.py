@@ -1,5 +1,4 @@
-# backend/rules_loader.py
-# Reads business_rules.yaml and formats it for Claude's prompt
+"""Business rules loader — reads, validates, and formats business_rules.yaml for Claude."""
 
 import os
 from functools import lru_cache
@@ -16,9 +15,14 @@ RULES_FILE = os.path.join(os.path.dirname(__file__), "configs", "business_rules.
 
 @lru_cache(maxsize=1)
 def load_rules() -> dict:
-    """
-    Load and validate business_rules.yaml.
-    Cached after first load — restart server to reload.
+    """Load and validate business_rules.yaml, caching the result.
+
+    Returns:
+        Parsed YAML content as a dict.
+
+    Raises:
+        FileNotFoundError: If business_rules.yaml does not exist.
+        ValueError: If required sections are missing from the file.
     """
     if not os.path.exists(RULES_FILE):
         raise FileNotFoundError(f"Business rules file not found: {RULES_FILE}")
@@ -31,7 +35,14 @@ def load_rules() -> dict:
 
 
 def _validate_rules(rules: dict) -> None:
-    """Ensure required sections exist in the YAML."""
+    """Assert all required top-level sections are present in the rules dict.
+
+    Args:
+        rules: Parsed YAML dict to validate.
+
+    Raises:
+        ValueError: If one or more required sections are absent.
+    """
     required_sections = [
         "version",
         "database",
@@ -49,7 +60,14 @@ def _validate_rules(rules: dict) -> None:
 
 
 def format_vocabulary(rules: dict) -> str:
-    """Format domain vocabulary for Claude."""
+    """Format the vocabulary section for injection into Claude's prompt.
+
+    Args:
+        rules: Full parsed rules dict.
+
+    Returns:
+        Multi-line string with domain term definitions.
+    """
     lines = ["DOMAIN VOCABULARY:", "-" * 40]
     for item in rules.get("vocabulary", []):
         lines.append(f"• '{item['term']}' means: {item['definition']}")
@@ -59,7 +77,14 @@ def format_vocabulary(rules: dict) -> str:
 
 
 def format_column_rules(rules: dict) -> str:
-    """Format column explanations for Claude."""
+    """Format the column_rules section for injection into Claude's prompt.
+
+    Args:
+        rules: Full parsed rules dict.
+
+    Returns:
+        Multi-line string with column explanations and examples.
+    """
     lines = ["COLUMN EXPLANATIONS:", "-" * 40]
     for item in rules.get("column_rules", []):
         lines.append(f"• {item['column']}: {item['explanation']}")
@@ -69,7 +94,14 @@ def format_column_rules(rules: dict) -> str:
 
 
 def format_query_rules(rules: dict) -> str:
-    """Format query rules by priority for Claude."""
+    """Format query rules sorted by priority (high → medium → low).
+
+    Args:
+        rules: Full parsed rules dict.
+
+    Returns:
+        Multi-line string with prioritised query rules.
+    """
     query_rules = rules.get("query_rules", [])
 
     # Sort by priority: high → medium → low
@@ -86,7 +118,14 @@ def format_query_rules(rules: dict) -> str:
 
 
 def format_safety_rules(rules: dict) -> str:
-    """Format safety rules for Claude."""
+    """Format safety rules for injection into Claude's prompt.
+
+    Args:
+        rules: Full parsed rules dict.
+
+    Returns:
+        Multi-line string listing safety constraints.
+    """
     lines = ["SAFETY RULES (never violate):", "-" * 40]
     for item in rules.get("safety_rules", []):
         lines.append(f"• {item['rule']}")
@@ -94,7 +133,14 @@ def format_safety_rules(rules: dict) -> str:
 
 
 def format_output_rules(rules: dict) -> str:
-    """Format output rules for Claude."""
+    """Format output formatting rules for injection into Claude's prompt.
+
+    Args:
+        rules: Full parsed rules dict.
+
+    Returns:
+        Multi-line string with output format instructions.
+    """
     lines = ["OUTPUT FORMAT RULES:", "-" * 40]
     for item in rules.get("output_rules", []):
         lines.append(f"• {item['rule']}")
@@ -105,9 +151,11 @@ def format_output_rules(rules: dict) -> str:
 
 
 def get_rules_for_claude() -> str:
-    """
-    Return all business rules formatted as a single
-    string ready to inject into Claude's prompt.
+    """Assemble and return all business rules as a single prompt-ready string.
+
+    Returns:
+        Concatenated sections: vocabulary, column rules, query rules,
+        output rules, and safety rules.
     """
     rules = load_rules()
 
@@ -134,9 +182,12 @@ def get_rules_for_claude() -> str:
 
 
 def reload_rules() -> dict:
-    """
-    Force reload rules from disk (clears cache).
-    Useful for hot-reloading without restarting server.
+    """Force-reload rules from disk by clearing the lru_cache.
+
+    Useful for hot-reloading rule changes without a server restart.
+
+    Returns:
+        Freshly loaded rules dict.
     """
     load_rules.cache_clear()
     return load_rules()
@@ -146,7 +197,12 @@ def reload_rules() -> dict:
 
 
 def get_rules_summary() -> dict:
-    """Return a summary of loaded rules (for /rules API endpoint)."""
+    """Return a summary of loaded rules with counts per section.
+
+    Returns:
+        Dict with version, database, description, and *_count keys
+        for each rules section.
+    """
     rules = load_rules()
     return {
         "version": rules.get("version"),

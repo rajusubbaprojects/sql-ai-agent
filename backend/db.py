@@ -1,4 +1,5 @@
-# MySQL connection — connect, execute queries, return results
+"""MySQL database helpers — connection factory, query executor, and connectivity check."""
+
 import mysql.connector
 from mysql.connector import Error
 
@@ -12,9 +13,17 @@ AVAILABLE_DATABASES = ["airlines_db", "sakila"]
 
 
 def get_connection(db_name: str = None):
-    """
-    Create and return a database connection.
-    If db_name is None, falls back to settings.db_name (airlines_db).
+    """Create and return a new MySQL database connection.
+
+    Args:
+        db_name: Database to connect to. Falls back to settings.db_name
+            (airlines_db) when None.
+
+    Returns:
+        A connected mysql.connector.connection object.
+
+    Raises:
+        mysql.connector.Error: If the connection cannot be established.
     """
     database = db_name or settings.db_name
     try:
@@ -32,9 +41,22 @@ def get_connection(db_name: str = None):
 
 
 def execute_query(sql: str, params: tuple = None, db_name: str = None) -> dict:
-    """
-    Execute a SQL query and return results.
-    Pass db_name to run against a specific database.
+    """Execute a SQL statement and return a structured result dict.
+
+    For SELECT queries, fetches all rows and column names. For INSERT /
+    UPDATE / DELETE, commits the transaction and returns row-count metadata.
+
+    Args:
+        sql: SQL statement to execute.
+        params: Optional parameterized query values passed to cursor.execute.
+        db_name: Database to run against. Defaults to settings.db_name.
+
+    Returns:
+        On success (SELECT): {"success": True, "columns": [...],
+            "rows": [...], "row_count": int}.
+        On success (write): {"success": True, "rows_affected": int,
+            "last_insert_id": int}.
+        On failure: {"success": False, "error": str}.
     """
     try:
         conn = get_connection(db_name)
@@ -67,7 +89,14 @@ def execute_query(sql: str, params: tuple = None, db_name: str = None) -> dict:
 
 
 def test_connection(db_name: str = None) -> bool:
-    """Quick check — is the database reachable."""
+    """Check whether the database server is reachable.
+
+    Args:
+        db_name: Database to connect to. Defaults to settings.db_name.
+
+    Returns:
+        True if a connection can be established, False otherwise.
+    """
     try:
         conn = get_connection(db_name)
         if conn.is_connected():

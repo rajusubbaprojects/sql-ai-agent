@@ -1,5 +1,4 @@
-# backend/schema_extractor.py
-# Extracts rich schema context from MySQL for Claude
+"""MySQL schema extraction helpers — queries metadata to build rich schema context for Claude."""
 
 from backend.db import execute_query
 
@@ -7,7 +6,14 @@ from backend.db import execute_query
 
 
 def get_tables(db_name: str = None) -> list:
-    """Get all table names in the database."""
+    """Return all table names in the specified database.
+
+    Args:
+        db_name: Database to inspect. Defaults to settings.db_name.
+
+    Returns:
+        List of table name strings, or an empty list on error.
+    """
     result = execute_query("SHOW TABLES", db_name=db_name)
     if not result["success"]:
         return []
@@ -18,7 +24,16 @@ def get_tables(db_name: str = None) -> list:
 
 
 def get_columns(table: str, db_name: str = None) -> list:
-    """Get full column details for a table."""
+    """Return full column metadata for a table via DESCRIBE.
+
+    Args:
+        table: Table name to describe.
+        db_name: Database containing the table.
+
+    Returns:
+        List of column descriptor dicts (Field, Type, Null, Key, Default,
+        Extra), or an empty list on error.
+    """
     result = execute_query(f"DESCRIBE `{table}`", db_name=db_name)
     if not result["success"]:
         return []
@@ -29,7 +44,15 @@ def get_columns(table: str, db_name: str = None) -> list:
 
 
 def get_primary_keys(table: str, db_name: str = None) -> list:
-    """Return list of primary key column names."""
+    """Return the primary key column names for a table.
+
+    Args:
+        table: Table name.
+        db_name: Database containing the table.
+
+    Returns:
+        List of column name strings that form the primary key.
+    """
     cols = get_columns(table, db_name)
     return [c["Field"] for c in cols if c.get("Key") == "PRI"]
 
@@ -38,7 +61,16 @@ def get_primary_keys(table: str, db_name: str = None) -> list:
 
 
 def get_foreign_keys(table: str, db_name: str = None) -> list:
-    """Get foreign key relationships for a table."""
+    """Return foreign key relationships for a table from information_schema.
+
+    Args:
+        table: Table name.
+        db_name: Database containing the table. Defaults to "airlines_db".
+
+    Returns:
+        List of dicts with column_name, referenced_table, and
+        referenced_column keys.
+    """
     sql = """
         SELECT
             COLUMN_NAME            AS column_name,
@@ -60,7 +92,15 @@ def get_foreign_keys(table: str, db_name: str = None) -> list:
 
 
 def get_indexes(table: str, db_name: str = None) -> list:
-    """Get index info for a table."""
+    """Return index metadata for a table.
+
+    Args:
+        table: Table name.
+        db_name: Database containing the table.
+
+    Returns:
+        List of dicts with index_name, column, and unique keys.
+    """
     result = execute_query(f"SHOW INDEX FROM `{table}`", db_name=db_name)
     if not result["success"]:
         return []
@@ -78,7 +118,15 @@ def get_indexes(table: str, db_name: str = None) -> list:
 
 
 def get_row_count(table: str, db_name: str = None) -> int:
-    """Get total number of rows in a table."""
+    """Return the total number of rows in a table.
+
+    Args:
+        table: Table name.
+        db_name: Database containing the table.
+
+    Returns:
+        Row count as an integer, or 0 on error.
+    """
     result = execute_query(f"SELECT COUNT(*) as total FROM `{table}`", db_name=db_name)
     if not result["success"] or not result["rows"]:
         return 0
@@ -89,7 +137,17 @@ def get_row_count(table: str, db_name: str = None) -> int:
 
 
 def get_sample_values(table: str, column: str, limit: int = 5, db_name: str = None) -> list:
-    """Get distinct non-null sample values for a column."""
+    """Return a small set of distinct non-null sample values for a column.
+
+    Args:
+        table: Table name.
+        column: Column name to sample.
+        limit: Maximum number of distinct values to return.
+        db_name: Database containing the table.
+
+    Returns:
+        List of sample values (type depends on column type), or [] on error.
+    """
     sql = f"""
         SELECT DISTINCT `{column}`
         FROM `{table}`
@@ -106,7 +164,19 @@ def get_sample_values(table: str, column: str, limit: int = 5, db_name: str = No
 
 
 def get_table_schema(table: str, db_name: str = None) -> dict:
-    """Assemble full rich schema for a single table."""
+    """Assemble a rich schema dict for a single table.
+
+    Enriches column metadata with sample values for character-typed columns
+    and joins in primary keys, foreign keys, and indexes.
+
+    Args:
+        table: Table name.
+        db_name: Database containing the table.
+
+    Returns:
+        Dict with table, row_count, columns, primary_keys, foreign_keys,
+        and indexes keys.
+    """
     columns = get_columns(table, db_name)
 
     enriched_cols = []
@@ -146,7 +216,14 @@ def get_table_schema(table: str, db_name: str = None) -> dict:
 
 
 def get_full_schema(db_name: str = None) -> dict:
-    """Get rich schema for all tables in the database."""
+    """Build a rich schema dict covering every table in the database.
+
+    Args:
+        db_name: Database to inspect. Defaults to settings.db_name.
+
+    Returns:
+        Dict with a "tables" key containing a list of get_table_schema results.
+    """
     tables = get_tables(db_name)
     return {"tables": [get_table_schema(t, db_name) for t in tables]}
 
@@ -155,9 +232,14 @@ def get_full_schema(db_name: str = None) -> dict:
 
 
 def get_schema_for_claude(db_name: str = None) -> str:
-    """
-    Format the full schema as clean text for Claude's prompt.
-    Works for any database — just pass db_name.
+    """Format the full database schema as human-readable text for Claude's prompt.
+
+    Args:
+        db_name: Database to describe. Defaults to "airlines_db".
+
+    Returns:
+        Multi-line string with table names, column details, sample values,
+        primary/foreign keys, and index information.
     """
     db_label = db_name or "airlines_db"
     schema = get_full_schema(db_name)

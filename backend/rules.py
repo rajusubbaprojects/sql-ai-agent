@@ -1,5 +1,4 @@
-# Business rules engine — loads and injects rules into prompts
-# Business rules engine — loads and injects rules into prompts
+"""Legacy business rules engine — loads rules.yaml and injects it into prompts."""
 
 from pathlib import Path
 
@@ -11,9 +10,10 @@ settings = get_settings()
 
 
 def load_rules() -> dict:
-    """
-    Load business rules from rules.yaml file.
-    Returns empty dict if file not found.
+    """Load business rules from the YAML file specified in settings.
+
+    Returns:
+        Parsed YAML content as a dict, or an empty dict if the file is missing.
     """
     rules_path = Path(settings.rules_file)
 
@@ -28,9 +28,16 @@ def load_rules() -> dict:
 
 
 def format_rules_for_claude(rules: dict) -> str:
-    """
-    Format rules dict into clean text
-    that Claude can easily understand.
+    """Format a rules dict into plain text for Claude's system prompt.
+
+    Renders each known section (definitions, query_rules, naming,
+    performance) as a labelled block of bullet points.
+
+    Args:
+        rules: Parsed rules dict, as returned by load_rules.
+
+    Returns:
+        Formatted multi-line string, or "No business rules defined." if empty.
     """
     if not rules:
         return "No business rules defined."
@@ -72,18 +79,24 @@ def format_rules_for_claude(rules: dict) -> str:
 
 
 def get_rules_for_claude() -> str:
-    """
-    Main function called by agent.py.
-    Returns formatted rules string ready to inject into Claude prompt.
+    """Load and format rules into a single prompt-ready string.
+
+    Returns:
+        Formatted rules string ready to inject into Claude's system prompt.
     """
     rules = load_rules()
     return format_rules_for_claude(rules)
 
 
 def add_custom_rule(category: str, rule: str) -> bool:
-    """
-    Dynamically add a new rule to rules.yaml at runtime.
-    Useful for when users define new rules via the API.
+    """Dynamically append a rule to rules.yaml at runtime.
+
+    Args:
+        category: Rule category key (creates the category if absent).
+        rule: Rule text to append.
+
+    Returns:
+        True on success, False if an exception was raised.
     """
     try:
         rules_path = Path(settings.rules_file)

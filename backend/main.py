@@ -1,3 +1,5 @@
+"""FastAPI application entrypoint — defines all HTTP routes and middleware."""
+
 import os
 import time
 from typing import Optional
@@ -56,6 +58,15 @@ FRONTEND_API_KEY = os.environ.get("FRONTEND_API_KEY", "")
 
 
 async def require_api_key(x_api_key: str = Header(None)):
+    """Enforce the X-API-Key header when FRONTEND_API_KEY is configured.
+
+    Args:
+        x_api_key: Value of the X-API-Key request header.
+
+    Raises:
+        HTTPException: 403 if FRONTEND_API_KEY is set and the provided key
+            does not match.
+    """
     if not FRONTEND_API_KEY:
         return
     if x_api_key != FRONTEND_API_KEY:
@@ -65,6 +76,15 @@ async def require_api_key(x_api_key: str = Header(None)):
 # ── REQUEST LOGGING ───────────────────────────────────────────────────────────
 @app.middleware("http")
 async def log_requests(request, call_next):
+    """Middleware that records path, method, status code, and latency per request.
+
+    Args:
+        request: The incoming Starlette Request.
+        call_next: The next middleware or route handler in the chain.
+
+    Returns:
+        The Response produced by the downstream handler.
+    """
     start = time.time()
     response = await call_next(request)
     latency_ms = (time.time() - start) * 1000
@@ -79,16 +99,37 @@ async def log_requests(request, call_next):
 
 # ── MODELS ────────────────────────────────────────────────────────────────────
 class QuestionRequest(BaseModel):
+    """Request body for /ask-and-run and /ask-stream endpoints.
+
+    Attributes:
+        question: Natural-language question to send to the AI agent.
+        reset_history: Clear conversation history before this turn.
+        session_id: Identifies the conversation session.
+    """
+
     question: str
     reset_history: Optional[bool] = False
     session_id: str = "default"
 
 
 class QueryRequest(BaseModel):
+    """Request body for the /query endpoint.
+
+    Attributes:
+        query: Raw SQL statement to execute against the database.
+    """
+
     query: str
 
 
 class RuleRequest(BaseModel):
+    """Request body for POST /rules.
+
+    Attributes:
+        category: Rule category (e.g. "query_rules", "safety_rules").
+        rule: Rule text to append under the given category.
+    """
+
     category: str
     rule: str
 
@@ -96,6 +137,11 @@ class RuleRequest(BaseModel):
 # ── ROUTES ────────────────────────────────────────────────────────────────────
 @app.get("/health")
 def health_check():
+    """Return service health status including database connectivity.
+
+    Returns:
+        JSON with status ("healthy" | "degraded"), database, and ai fields.
+    """
     db_ok = test_connection()
     return {
         "status": "healthy" if db_ok else "degraded",
@@ -106,6 +152,21 @@ def health_check():
 
 @app.post("/ask-and-run", dependencies=[Depends(require_api_key)])
 def ask_and_run(request: QuestionRequest):
+    """Translate a natural-language question to SQL and execute it in one step.
+
+    Routes the question to the correct database, generates SQL via Claude,
+    runs the query, and returns both the AI answer and raw query results.
+
+    Args:
+        request: QuestionRequest body.
+
+    Returns:
+        JSON with question, answer, sql, db_name, results, query_error,
+        session_id, and history_length.
+
+    Raises:
+        HTTPException: 400 if the question is empty; 500 on agent failure.
+    """
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
     result = ask_agent(
@@ -139,6 +200,19 @@ def ask_and_run(request: QuestionRequest):
 
 @app.post("/ask-stream", dependencies=[Depends(require_api_key)])
 def ask_stream(request: QuestionRequest):
+    """Translate a natural-language question to SQL without executing the query.
+
+    Useful for clients that want the AI answer and SQL text separately.
+
+    Args:
+        request: QuestionRequest body.
+
+    Returns:
+        JSON with success, answer, and session_id.
+
+    Raises:
+        HTTPException: 400 if the question is empty; 500 on agent failure.
+    """
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
     result = ask_agent(
@@ -157,6 +231,17 @@ def ask_stream(request: QuestionRequest):
 
 @app.post("/query", dependencies=[Depends(require_api_key)])
 def run_query(request: QueryRequest):
+    """Execute a raw SQL query against the default database.
+
+    Args:
+        request: QueryRequest body with a SQL statement.
+
+    Returns:
+        JSON with success, rows, and data.
+
+    Raises:
+        HTTPException: 400 if the query fails to execute.
+    """
     result = execute_query(request.query)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -165,18 +250,39 @@ def run_query(request: QueryRequest):
 
 @app.get("/schema")
 def get_schema():
+    """Return the formatted database schema for the default database.
+
+    Returns:
+        JSON with success and the schema string.
+    """
     schema = get_schema_for_claude()
     return {"success": True, "schema": schema}
 
 
 @app.get("/rules")
 def get_rules():
+    """Return the formatted business rules string for Claude's prompt.
+
+    Returns:
+        JSON with success and the rules string.
+    """
     rules = get_rules_for_claude()
     return {"success": True, "rules": rules}
 
 
 @app.post("/rules")
 def add_rule(request: RuleRequest):
+    """Append a new rule to the specified category in rules.yaml.
+
+    Args:
+        request: RuleRequest body with category and rule text.
+
+    Returns:
+        JSON with success and a confirmation message.
+
+    Raises:
+        HTTPException: 500 if the rule cannot be persisted.
+    """
     success = add_custom_rule(category=request.category, rule=request.rule)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add rule")
@@ -185,6 +291,11 @@ def add_rule(request: RuleRequest):
 
 @app.post("/reset")
 def reset_chat():
+    """Clear the default conversation session history.
+
+    Returns:
+        JSON with success and a confirmation message.
+    """
     return reset_conversation()
 
 
