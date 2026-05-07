@@ -122,35 +122,52 @@ jobs:
           ECR_REPOSITORY: sql-ai-agent
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY@$(aws ecr describe-images \
+          # Get exact image URI with digest
+          DIGEST=$(aws ecr describe-images \
             --repository-name $ECR_REPOSITORY \
             --image-ids imageTag=$IMAGE_TAG \
             --query "imageDetails[0].imageDigest" \
             --output text)
 
-          CURRENT=$(aws ecs describe-task-definition \
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY@$DIGEST"
+          echo "Deploying image: $IMAGE_URI"
+
+          # Fetch current task definition and update image
+          aws ecs describe-task-definition \
             --task-definition sql-ai-agent-task \
             --query "taskDefinition" \
-            --output json)
+            --output json > /tmp/task.json
 
-          NEW=$(echo $CURRENT | python3 -c "
-          import json,sys
-          td=json.load(sys.stdin)
-          td['containerDefinitions'][0]['image']='$IMAGE_URI'
-          [td.pop(f,None) for f in ['taskDefinitionArn','revision','status','requiresAttributes','compatibilities','registeredAt','registeredBy']]
-          print(json.dumps(td))
-          ")
+          python3 - "$IMAGE_URI" << 'PYEOF'
+          import json, sys
+          image_uri = sys.argv[1]
+          with open('/tmp/task.json') as f:
+              td = json.load(f)
+          td['containerDefinitions'][0]['image'] = image_uri
+          for field in ['taskDefinitionArn','revision','status','requiresAttributes',
+                        'compatibilities','registeredAt','registeredBy']:
+              td.pop(field, None)
+          with open('/tmp/new_task.json', 'w') as f:
+              json.dump(td, f)
+          print(f"Image set to: {image_uri}")
+          PYEOF
 
-          NEW_ARN=$(echo $NEW | aws ecs register-task-definition \
-            --cli-input-json file:///dev/stdin \
+          # Register new task definition revision
+          NEW_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/new_task.json \
             --query "taskDefinition.taskDefinitionArn" \
             --output text)
 
+          echo "New task definition: $NEW_ARN"
+
+          # Update service
           aws ecs update-service \
             --cluster sql-ai-agent-cluster \
             --service sql-ai-agent-service \
             --task-definition $NEW_ARN \
-            --region us-east-1
+            --region us-east-1 \
+            --query "service.deployments[0].status" \
+            --output text
       - name: Wait for deployment
         run: |
           echo "Waiting for ECS service to stabilize..."
